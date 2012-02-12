@@ -8,7 +8,7 @@ application: simpleauth
 # Each version of an application retains its own copy of app.yaml.
 # When an application is uploaded, the version mentioned in the app.yaml file being uploaded is the version 
 # that gets created or replaced by the upload.
-version: prova
+version: 0-1
 
 # Use Python 2.7 runtime here.
 # See this for more info: http://code.google.com/appengine/docs/python/python27/using27.html
