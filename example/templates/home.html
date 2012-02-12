@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+
+{% block main %}
+  <p>This is a test app to demonstrate SimpleAuth.</p>
+  {% if logged_in %}
+    <a href="{{ url_for('profile') }}" class="btn">my profile</a>
+    <a href="/logout" class="btn">logout</a>
+  {% else %}
+    <a href="/auth/google" class="btn">Google</a>
+    <a href="/auth/facebook" class="btn">Facebook</a>
+    <a href="/auth/openid?identity_url=me.yahoo.com" class="btn">Yahoo! (OpenID)</a>
+    <a href="/auth/twitter" class="btn">Twitter</a>
+    <a href="/auth/linkedin" class="btn">LinkedIn</a>
+    <a href="/auth/windows_live" class="btn">Windows Live</a>
+  {% endif %}
+{% endblock %}

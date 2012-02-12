@@ -1,0 +1,8 @@
+{% extends "layout.html" %}
+
+{% block main %}
+  <h1>Hello, {{ user.name }}</h1>
+  <img src="{{ user.avatar_url }}">
+  <p>email: {{ ', '.join(user.emails) }}</p>
+  <p><a href="{{ user.link }}" target="_blank" rel="nofollow">{{ user.link }}</a></p>
+{% endblock %}

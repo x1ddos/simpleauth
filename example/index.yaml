@@ -1,0 +1,29 @@
+# See this on how to configure indexes:
+# http://code.google.com/appengine/docs/python/config/indexconfig.html
+#
+# For more information about indexes, see Queries and Indexes
+# http://code.google.com/appengine/docs/python/datastore/queries.html
+
+indexes:
+
+# - kind: Cat
+#   ancestor: no
+#   properties:
+#   - name: name
+#   - name: age
+#     direction: desc
+
+# - kind: Cat
+#   properties:
+#   - name: name
+#     direction: asc
+#   - name: whiskers
+#     direction: desc
+
+# - kind: Store
+#   ancestor: yes
+#   properties:
+#   - name: business
+#     direction: asc
+#   - name: owner
+#     direction: asc
