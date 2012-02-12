@@ -40,6 +40,8 @@ dwsync.xml
 .svn
 .CVS
 .idea
+dist
 example/tmp
 example/secrets.py
+MANIFEST
 
