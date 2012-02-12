@@ -45,7 +45,7 @@ Getting Started
        See what's in it with logging.info(data, auth_info)
        """
        
-       auth_id = auth_info['id']
+       auth_id = '%s:%s' % (provider, data['id'])
        
        # 1. check whether user exist, e.g.
        #    User.get_by_auth_id(auth_id)
