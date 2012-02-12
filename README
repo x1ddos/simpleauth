@@ -90,9 +90,12 @@ For instance, SomeBaseRequestHandler could be webapp2.RequestHandler.
    
    # Map URLs to handlers
    routes = [
-     Route('/auth/<provider>',          handler='handlers.AuthHandler:_simple_auth', name='auth_login'),
-     Route('/auth/<provider>/callback', handler='handlers.AuthHandler:_auth_callback', name='auth_callback'),
-     Route('/logout',                   handler='handlers.AuthHandler:logout', name='logout')
+     Route('/auth/<provider>',
+       handler='handlers.AuthHandler:_simple_auth', name='auth_login'),
+     Route('/auth/<provider>/callback', 
+       handler='handlers.AuthHandler:_auth_callback', name='auth_callback'),
+     Route('/logout',
+       handler='handlers.AuthHandler:logout', name='logout')
    ]
    
 5. That's it. See a sample app in the example dir. 
