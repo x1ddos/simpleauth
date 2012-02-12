@@ -6,7 +6,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name='simpleauth',
-      version='0.1',
+      version='0.1.1',
       author='Alex Vagin (http://alex.cloudware.it)',
       author_email='alex at cloudware.it',
       url='http://simpleauth.appspot.com',
