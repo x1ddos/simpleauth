@@ -86,8 +86,7 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
   
   def _on_signin(self, data, auth_info):
     """Return value is ignored. Raise an exception if needed."""
-    logging.info(auth_info)
-    logging.info(data)
+    auth_id = auth_info['id']
     self.redirect('/')
 
   def logout(self):

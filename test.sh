@@ -8,8 +8,7 @@
 # for automatic testing at
 # http://alex.cloudware.it/2012/02/gae-automated-python-testing-with-nose.html
 
-# Directory where the whole thing resides.
-# $DIR will point to the application root. 
+# Base directory
 DIR=`dirname $0`
 
 pushd .
@@ -21,10 +20,12 @@ if [ "$1" == "auto" ]; then
   if [ -f tests/nosy.cfg ]; then
     nosy -c tests/nosy.cfg
   else
-    tdaemon --custom-args="--with-snort --with-gae --without-sandbox --logging-filter=-root"
+    # tdaemon --custom-args="--with-snort --with-gae --without-sandbox --logging-filter=-root"
+    tdaemon --custom-args="--with-snort --without-sandbox --logging-filter=-root"
   fi
 else
-  nosetests --with-gae --without-sandbox --logging-filter=-root $@
+  # nosetests --with-gae --without-sandbox --logging-filter=-root $@
+  nosetests --without-sandbox --logging-filter=-root $@
 fi
 
 popd
