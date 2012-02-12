@@ -78,7 +78,7 @@ class SimpleAuthHandler(object):
     'twitter'     : '_query_string_parser'
   }
   
-  def auth(self, provider=None):
+  def _simple_auth(self, provider=None):
     """Dispatcher of auth init requests, e.g.
     GET /auth/PROVIDER
     
@@ -97,7 +97,7 @@ class SimpleAuthHandler(object):
       logging.error('Provider %s is not supported' % provider)
       self._provider_not_supported(provider)
       
-  def callback(self, provider=None):
+  def _auth_callback(self, provider=None):
     """Dispatcher of callbacks from auth providers, e.g.
     /auth/PROVIDER/callback?params=...
     
@@ -110,7 +110,11 @@ class SimpleAuthHandler(object):
     meth = '_%s_callback' % cfg[0]
     if hasattr(self, meth):
       try:
-        getattr(self, meth)(provider, *cfg[-1:])
+        
+        user_data, auth_info = getattr(self, meth)(provider, *cfg[-1:])
+        # we're done here. the rest should be implemented by the actual app
+        self._on_signin(user_data, auth_info, provider)
+        
       except:
         error_msg = str(sys.exc_info()[1])
         logging.error(error_msg)
@@ -181,8 +185,7 @@ class SimpleAuthHandler(object):
     auth_info = getattr(self, self.TOKEN_RESPONSE_PARSERS[provider])(resp.content)
     user_data = getattr(self, '_get_%s_user_info' % provider)(auth_info, key=consumer_key, secret=consumer_secret)
     
-    # we're done here. the rest should be implemented by the actual app
-    self._on_signin(user_data, auth_info)
+    return (user_data, auth_info)
     
   def _oauth1_init(self, provider, auth_urls):
     """Initiates OAuth 1.0 dance"""
@@ -212,6 +215,7 @@ class SimpleAuthHandler(object):
       
     
   def _oauth1_callback(self, provider, access_token_url):
+    """Third step of OAuth 1.0 dance."""
     request_token = self.session.pop('req_token', None)
     verifier = self.request.get('oauth_verifier', None)
     consumer_key, consumer_secret = self._get_consumer_info_for(provider)
@@ -230,9 +234,7 @@ class SimpleAuthHandler(object):
     auth_info = getattr(self, self.TOKEN_RESPONSE_PARSERS[provider])(content)
     user_data = getattr(self, '_get_%s_user_info' % provider)(auth_info, key=consumer_key, secret=consumer_secret)
     
-    # we're done here. the rest should be implemented by the actual app
-    self._on_signin(user_data, auth_info)
-    
+    return (user_data, auth_info)
     
   def _openid_init(self, provider='openid', identity=None):
     """Initiates OpenID dance using App Engine users module API."""
@@ -262,8 +264,8 @@ class SimpleAuthHandler(object):
       'email'   : user.email()
     }
     
-    # we're done here. the rest should be implemented by the actual app
-    self._on_signin(uinfo, {'provider': user.federated_provider()})
+    return (uinfo, {'provider': user.federated_provider()})
+
     
   #
   # callbacks and consumer key/secrets

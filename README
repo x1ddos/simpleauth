@@ -37,7 +37,7 @@ Getting Started
    class AuthHandler(SomeBaseRequestHandler, SimpleAuthHandler):
      """Authentication handler for all kinds of auth."""
 
-     def _on_signin(self, data, auth_info):
+     def _on_signin(self, data, auth_info, provider):
        """Callback whenever a new or existing user is logging in.
        data is a user info dictionary.
        auth_info contains access token or oauth token and secret.
@@ -90,9 +90,9 @@ For instance, SomeBaseRequestHandler could be webapp2.RequestHandler.
    
    # Map URLs to handlers
    routes = [
-     Route('/auth/<provider>', handler='handlers.AuthHandler:auth', name='auth_login'),
-     Route('/auth/<provider>/callback', handler='handlers.AuthHandler:callback', name='auth_callback'),
-     Route('/logout', handler='handlers.AuthHandler:logout', name='logout')
+     Route('/auth/<provider>',          handler='handlers.AuthHandler:_simple_auth', name='auth_login'),
+     Route('/auth/<provider>/callback', handler='handlers.AuthHandler:_auth_callback', name='auth_callback'),
+     Route('/logout',                   handler='handlers.AuthHandler:logout', name='logout')
    ]
    
 5. That's it. See a sample app in the example dir. 

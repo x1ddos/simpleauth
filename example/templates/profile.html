@@ -1,8 +1,21 @@
 {% extends "layout.html" %}
 
 {% block main %}
-  <h1>Hello, {{ user.name }}</h1>
-  <img src="{{ user.avatar_url }}">
-  <p>email: {{ ', '.join(user.emails) }}</p>
-  <p><a href="{{ user.link }}" target="_blank" rel="nofollow">{{ user.link }}</a></p>
+  <div class="media">
+    <div class="img avatar">
+      <img src="{{ user.avatar_url }}">
+    </div>
+    <div class="body">
+      <h1 style="margin-top: 0; padding-top: 0">{{ user.name }}</h1>
+      <p><a href="{{ user.link }}" target="_blank" rel="nofollow">{{ user.link }}</a></p>
+    </div>
+  </div>
+
+
+  <h2>auth session</h2>
+  <pre>{{ session }}</pre>
+  
+  <p style="margin-top: 2em;">
+    <a href="/logout" class="btn">logout</a>
+  </p>
 {% endblock %}

@@ -25,8 +25,8 @@ routes = [
   Route('/', handler='handlers.RootHandler'),  
   Route('/profile', handler='handlers.ProfileHandler', name='profile'),
   
-  Route('/auth/<provider>', handler='handlers.AuthHandler:auth', name='auth_login'),
-  Route('/auth/<provider>/callback', handler='handlers.AuthHandler:callback', name='auth_callback'),
+  Route('/auth/<provider>', handler='handlers.AuthHandler:_simple_auth', name='auth_login'),
+  Route('/auth/<provider>/callback', handler='handlers.AuthHandler:_auth_callback', name='auth_callback'),
   Route('/logout', handler='handlers.AuthHandler:logout', name='logout')
 ]
 
