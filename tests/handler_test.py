@@ -64,6 +64,9 @@ class SimpleAuthHandlerTestCase(helpers.BaseTestMixin, unittest.TestCase):
       
     with self.assertRaises(NotSupportedException):
       self.handler._simple_auth('whatever')
+      
+    with self.assertRaises(NotSupportedException):
+      app.get_response('/auth/xxx')
 
   def test_openid_init(self):
     resp = app.get_response('/auth/openid?identity_url=some.oid.provider.com')
