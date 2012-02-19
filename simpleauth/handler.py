@@ -258,6 +258,10 @@ class SimpleAuthHandler(object):
     after the user has been authenticated.
     """
     user = users.get_current_user()
+    
+    if not user or not user.federated_identity():
+      raise Exception('OpenID Authentication failed')
+      
     uinfo = {
       'id'      : user.federated_identity(),
       'nickname': user.nickname(),
