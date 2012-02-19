@@ -92,7 +92,18 @@ class SimpleAuthHandler(object):
     cfg = self.PROVIDERS.get(provider, (None,))
     meth = '_%s_init' % cfg[0]
     if hasattr(self, meth):
-      getattr(self, meth)(provider, cfg[1])
+      try:
+        
+        # initiate openid, oauth1 or oauth2 authentication
+        # we don't respond directly in here: specific methods are in charge 
+        # with redirecting user to an auth endpoint
+        getattr(self, meth)(provider, cfg[1])
+        
+      except:
+        error_msg = str(sys.exc_info()[1])
+        logging.error(error_msg)
+        self._auth_error(provider, msg=error_msg)
+        
     else:
       logging.error('Provider %s is not supported' % provider)
       self._provider_not_supported(provider)
@@ -191,28 +202,35 @@ class SimpleAuthHandler(object):
     """Initiates OAuth 1.0 dance"""
     key, secret = self._get_consumer_info_for(provider)
     callback_url = self._callback_uri_for(provider)
+    token_request_url = auth_urls.get('request', None)
+    auth_url = auth_urls.get('auth', None)
+    _parse = getattr(self, self.TOKEN_RESPONSE_PARSERS[provider], None)
     
-    if key and secret and auth_urls['request'] and auth_urls['auth'] and callback_url:
-      # make a request_token request
-      client = self._oauth1_client(consumer_key=key, consumer_secret=secret)
-      resp, content = client.request(auth_urls['request'], "GET")
+    if not(key or secret or token_request_url or auth_url or callback_url or _parse):
+      raise Exception('Provider %s is not supported' % provider)
       
-      request_token = getattr(self, self.TOKEN_RESPONSE_PARSERS[provider])(content)
-      target_url = auth_urls['auth'].format(urlencode({
-        'oauth_token': request_token['oauth_token'],
-        'oauth_callback': callback_url
-      }))
+    # make a request_token request
+    client = self._oauth1_client(consumer_key=key, consumer_secret=secret)
+    resp, content = client.request(auth_urls['request'], "GET")
+    
+    if resp.status != 200:
+      raise Exception("Could not fetch a valid response from %s" % provider)
+    
+    # parse token request response
+    request_token = _parse(content)
+    if not request_token.get('oauth_token', None):
+      raise Exception("Couldn't get a valid token from %s\n%s" % (provider, str(request_token)))
       
-      logging.debug('Redirecting user to %s' % target_url)
-      
-      # save request token for later, the callback
-      self.session['req_token'] = request_token
-      self.redirect(target_url)
-      
-    else:
-      logging.error('Provider %s is not supported' % provider)
-      self._provider_not_supported(provider)
-      
+    target_url = auth_urls['auth'].format(urlencode({
+      'oauth_token': request_token.get('oauth_token', None),
+      'oauth_callback': callback_url
+    }))
+    
+    logging.debug('Redirecting user to %s' % target_url)
+    
+    # save request token for later, the callback
+    self.session['req_token'] = request_token
+    self.redirect(target_url)      
     
   def _oauth1_callback(self, provider, access_token_url):
     """Third step of OAuth 1.0 dance."""
@@ -287,14 +305,6 @@ class SimpleAuthHandler(object):
     """Should return a tuple (key, secret, desired_scopes).
     Defaults to None. You should redefine this method and return real values."""
     return (None, None, None)
-    
-  def _oauth1_client(self, token=None, consumer_key=None, consumer_secret=None):
-    """Returns OAuth 1.0 client that is capable of signing requests."""
-    args = [oauth1.Consumer(key=consumer_key, secret=consumer_secret)]
-    if token:
-      args.append(token)
-    
-    return oauth1.Client(*args)
     
   #
   # user profile/info
@@ -373,6 +383,14 @@ class SimpleAuthHandler(object):
   #
   # aux methods
   #
+  
+  def _oauth1_client(self, token=None, consumer_key=None, consumer_secret=None):
+    """Returns OAuth 1.0 client that is capable of signing requests."""
+    args = [oauth1.Consumer(key=consumer_key, secret=consumer_secret)]
+    if token:
+      args.append(token)
+    
+    return oauth1.Client(*args)
   
   def _oauth2_request(self, url, token):
     """Makes an HTTP request with OAuth 2.0 access token using App Engine URLfetch API"""

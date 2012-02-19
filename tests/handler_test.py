@@ -4,6 +4,7 @@ import helpers
 
 from webapp2 import WSGIApplication, Route, RequestHandler
 from webob import Request
+import httplib2
 
 from simpleauth import SimpleAuthHandler
 
@@ -14,25 +15,60 @@ from simpleauth import SimpleAuthHandler
 class NotSupportedException(Exception): pass
 class DummyAuthError(Exception): pass
 
+class OAuth1ClientMock(object):
+  def __init__(self, **kwargs):
+    super(OAuth1ClientMock, self).__init__()
+    self._response_content = kwargs.pop('content', '')
+    self._response_dict = kwargs
+    
+  def request(self, url, method):
+    return (httplib2.Response(self._response_dict), self._response_content)
+  
 class DummyAuthHandler(RequestHandler, SimpleAuthHandler):
   def __init__(self, *args, **kwargs):
     super(DummyAuthHandler, self).__init__(*args, **kwargs)
     self.PROVIDERS.update({
-      'dummy_oauth2': ('oauth2', 'https://dummy/oauth2', 'https://dummy/oauth2_token')
+      'dummy_oauth1': ('oauth1', {
+        'request': 'https://dummy/oauth1_rtoken',
+        'auth'  : 'https://dummy/oauth1_auth?{0}'
+      }, 'https://dummy/oauth1_atoken'),
+      'dummy_oauth2': ('oauth2', 'https://dummy/oauth2{0}', 'https://dummy/oauth2_token'),
     })
+    
+    self.TOKEN_RESPONSE_PARSERS.update({
+      'dummy_oauth1': '_json_parser',
+      'dummy_oauth2': '_json_parser'
+    })
+    
+    self.session = {'req_token': {'oauth_token':'oauth1 token', 'oauth_token_secret':'a secret'}}
     
   def _on_signin(self, user_data, auth_info, provider):
     self.redirect('/logged_in?provider=%s' % provider)
     
   def _callback_uri_for(self, provider):
-    return '/auth/openid/callback'
+    return '/auth/%s/callback' % provider
+    
+  def _get_consumer_info_for(self, provider):
+    return {
+      'dummy_oauth1': ('cons_key', 'cons_secret'),
+      'dummy_oauth2': ('cl_id', 'cl_secret', 'a_scope'),
+    }.get(provider, (None, None))
     
   def _provider_not_supported(self, provider):
     raise NotSupportedException()
 
   def _auth_error(self, provider, msg=None):
     raise DummyAuthError("Couldn't authenticate against %s: %s" % (provider, msg))
-   
+
+  # mocks
+
+  def _oauth1_client(self, token=None, consumer_key=None, consumer_secret=None):
+    """OAuth1 client mock"""
+    return OAuth1ClientMock(content='{"oauth_token": "some oauth1 request token"}')
+    
+  def _get_dummy_oauth1_user_info(self, auth_info, key=None, secret=None):
+    return 'an oauth1 user info'
+
 # dummy app to test requests against 
 app = WSGIApplication([
   Route('/auth/<provider>', handler=DummyAuthHandler, handler_method='_simple_auth'),
@@ -92,3 +128,23 @@ class SimpleAuthHandlerTestCase(helpers.BaseTestMixin, unittest.TestCase):
   def test_openid_callback_failure(self):
     with self.assertRaisesRegexp(DummyAuthError, 'OpenID Authentication failed'):
       app.get_response('/auth/openid/callback')
+
+  def test_oauth1_init(self):
+    resp = app.get_response('/auth/dummy_oauth1')
+    
+    self.assertEqual(resp.status_int, 302)
+    self.assertEqual(resp.headers['Location'], 
+                     'https://dummy/oauth1_auth?oauth_token=some+oauth1+request+token&oauth_callback=%2Fauth%2Fdummy_oauth1%2Fcallback')
+
+  def test_oauth1_callback_success(self):
+    resp = app.get_response('/auth/dummy_oauth1/callback?oauth_verifier=a-verifier-token')
+    self.assertEqual(resp.status_int, 302)
+    self.assertEqual(resp.headers['Location'], 'http://localhost/logged_in?provider=dummy_oauth1')
+        
+  def test_oauth1_callback_failure(self):
+    with self.assertRaisesRegexp(DummyAuthError, "No OAuth verifier was provided"):
+      resp = app.get_response('/auth/dummy_oauth1/callback')
+      
+  def test_query_string_parser(self):
+    self.assertEqual(self.handler._query_string_parser('param1=val1&param2=val2'), 
+                    {'param1':'val1', 'param2':'val2'})
