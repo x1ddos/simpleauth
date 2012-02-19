@@ -41,7 +41,7 @@ dwsync.xml
 .CVS
 .idea
 dist
+build
 example/tmp
 example/secrets.py
 MANIFEST
-

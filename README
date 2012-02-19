@@ -25,7 +25,7 @@ Getting Started
 1. Install the library on your local Mac/PC with one of:
   a. "easy_install -U simpleauth"
   b. "pip install simpleauth"
-  c. clone the source repo, e.g. "git clone git://github.com/crhym3/simpleauth.git"
+  c. clone the source repo, e.g. "git clone https://code.google.com/p/gae-simpleauth/"
   
 2. Place the subdir called "simpleauth" into your app root.
 
