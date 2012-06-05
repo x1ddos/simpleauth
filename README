@@ -5,7 +5,7 @@ Supported specs:
   - OAuth 2.0
   - OAuth 1.0(a)
   - OpenID
-  
+
 Supported providers out of the box:
   - Google (OAuth 2.0)
   - Facebook (OAuth 2.0)
@@ -13,7 +13,7 @@ Supported providers out of the box:
   - Twitter (OAuth 1.0a)
   - LinkedIn (OAuth 1.0a)
   - OpenID, using App Engine users module API
-  
+
 Dependencies:
   - python-oauth2. This is actually a library implementing OAuth 1.0 spec.
   - httplib2 (as a dependency of python-oauth2)
@@ -26,7 +26,7 @@ Getting Started
   a. "easy_install -U simpleauth"
   b. "pip install simpleauth"
   c. clone the source repo, e.g. "git clone https://code.google.com/p/gae-simpleauth/"
-  
+
 2. Place the subdir called "simpleauth" into your app root.
 
 3. You'll also need to get python-oauth2 (pip install oauth2) 
@@ -75,7 +75,7 @@ Getting Started
        For OAuth 2.0 you should also return a scope, e.g.
        ('my app id', 'my app secret', 'email,user_about_me')
        
-       The scope depens solely on the provider.
+       The scope depends solely on the provider.
        See example/secrets.py.template
        """
        return secrets.AUTH_CONFIG[provider]
