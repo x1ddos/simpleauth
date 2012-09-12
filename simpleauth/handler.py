@@ -5,16 +5,17 @@ import logging
 from urllib import urlencode
 import urlparse
 
-# taken from anyjson.py
+# Get available json parser
 try:
-  import simplejson as json
-except ImportError: # pragma: no cover
-  try:
-    # Try to import from django, should work on App Engine
-    from django.utils import simplejson as json
+  # should be the fastest on App Engine py27.
+  import json
+except ImportError:
+  try: 
+    import simplejson as json
   except ImportError:
-    # Should work for Python2.6 and higher.
-    import json
+    from django.utils import simplejson as json
+    # at this point ImportError will be raised 
+    # if none of the above could be imported
     
 # already in the App Engine libs, see app.yaml on how to specify libraries
 # need this for providers like LinkedIn
