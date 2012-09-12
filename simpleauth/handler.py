@@ -31,20 +31,25 @@ __all__ = ['SimpleAuthHandler']
 
 
 class SimpleAuthHandler(object):
-  """
-  Google auth:
+  """A mixin to be used with a real request handler, 
+  e.g. webapp2.RequestHandler. See README for getting started and 
+  a usage example, or look through the code. It really is simple.
+
+  Docs on authentication flow of various providers:
+
+  Google auth
   http://code.google.com/apis/accounts/docs/OAuth2WebServer.html
   
-  Facbook auth:
+  Facbook auth
   http://developers.facebook.com/docs/authentication/
   
-  LinkedIn auth:
+  LinkedIn auth.
   https://developer.linkedin.com/documents/linkedins-oauth-details
   
-  Windows Live:
+  Windows Live.
   http://msdn.microsoft.com/en-us/library/hh243648.aspx#user
   
-  Twtitter:
+  Twtitter.
   https://dev.twitter.com/docs/auth/oauth
   """
   
