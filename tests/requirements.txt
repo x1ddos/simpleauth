@@ -1,0 +1,8 @@
+# Packages needed for testing env.
+# The rest is in GAE SDK for Python.
+#
+# Use it with "pip install -r requirements.txt"
+
+oauth2
+lxml==2.3
+webob==1.1.1
