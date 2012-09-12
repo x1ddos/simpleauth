@@ -87,7 +87,8 @@ class SimpleAuthHandler(object):
     
     If a particular provider is not defined in the PROVIDERS
     or _<authtype>_init() does not exist for a specific auth type, 
-    it'll fall back to self._provider_not_supported() passing in the origina provider name.
+    it'll fall back to self._provider_not_supported() passing in the 
+    original provider name.
     """
     cfg = self.PROVIDERS.get(provider, (None,))
     meth = '_%s_init' % cfg[0]
@@ -135,8 +136,8 @@ class SimpleAuthHandler(object):
       self._provider_not_supported(provider)
     
   def _provider_not_supported(self, provider=None):
-    """Callback triggered whenever user's trying to authenticate agains a provider we don't support,
-    or provider wasn't specified for some reason.
+    """Callback triggered whenever user's trying to authenticate agains 
+    a provider we don't support, or provider wasn't specified for some reason.
     
     Defaults to redirecting to / (root). 
     Override this method for a custom behaviour.
@@ -144,18 +145,28 @@ class SimpleAuthHandler(object):
     self.redirect('/')
     
   def _auth_error(self, provider, msg=None):
-    """Being called on any error during auth process, with optional text message provided.
-    Defaults to redirecting to /"""
+    """Being called on any error during auth process, with optional text 
+    message provided. 
+
+    Defaults to redirecting to /
+    """
     self.redirect('/')
 
   def _oauth2_init(self, provider, auth_url):
-    """Initiates OAuth 2.0 dance. Falls back to self._provider_not_supported(provider) 
-    if either key or secret is missing."""
+    """Initiates OAuth 2.0 dance. 
+
+    Falls back to self._provider_not_supported(provider) if either key 
+    or secret is missing.
+    """
     key, secret, scope = self._get_consumer_info_for(provider)
     callback_url = self._callback_uri_for(provider)
     
     if key and secret and auth_url and callback_url:
-      params = { 'response_type': 'code', 'client_id': key, 'redirect_uri': callback_url }
+      params = {
+        'response_type': 'code', 
+        'client_id': key, 
+        'redirect_uri': callback_url 
+      }
       if scope:
         params.update(scope=scope)
 
@@ -173,15 +184,15 @@ class SimpleAuthHandler(object):
     code = self.request.get('code', None)
     error = self.request.get('error', None)
     callback_url = self._callback_uri_for(provider)
-    consumer_key, consumer_secret, scope = self._get_consumer_info_for(provider)
+    client_id, client_secret, scope = self._get_consumer_info_for(provider)
     
     if error:
       raise Exception(error)
       
     payload = {
       'code': code,
-      'client_id': consumer_key,
-      'client_secret': consumer_secret,
+      'client_id': client_id,
+      'client_secret': client_secret,
       'redirect_uri': callback_url,
       'grant_type': 'authorization_code'
     }
@@ -192,10 +203,12 @@ class SimpleAuthHandler(object):
       method=urlfetch.POST,
       headers={'Content-Type': 'application/x-www-form-urlencoded'}
     )
-  
-    auth_info = getattr(self, self.TOKEN_RESPONSE_PARSERS[provider])(resp.content)
-    user_data = getattr(self, '_get_%s_user_info' % provider)(auth_info, key=consumer_key, secret=consumer_secret)
-    
+
+    _parser = getattr(self, self.TOKEN_RESPONSE_PARSERS[provider])
+    _fetcher = getattr(self, '_get_%s_user_info' % provider)
+
+    auth_info = _parser(resp.content)
+    user_data = _fetcher(auth_info, key=client_id, secret=client_secret)
     return (user_data, auth_info)
     
   def _oauth1_init(self, provider, auth_urls):
@@ -204,9 +217,11 @@ class SimpleAuthHandler(object):
     callback_url = self._callback_uri_for(provider)
     token_request_url = auth_urls.get('request', None)
     auth_url = auth_urls.get('auth', None)
-    _parse = getattr(self, self.TOKEN_RESPONSE_PARSERS[provider], None)
-    
-    if not(key or secret or token_request_url or auth_url or callback_url or _parse):
+    _parser = getattr(self, self.TOKEN_RESPONSE_PARSERS[provider], None)
+
+    _valid = key or secret or \
+             token_request_url or auth_url or callback_url or _parser
+    if not(_valid):
       raise Exception('Provider %s is not supported' % provider)
       
     # make a request_token request
@@ -217,9 +232,10 @@ class SimpleAuthHandler(object):
       raise Exception("Could not fetch a valid response from %s" % provider)
     
     # parse token request response
-    request_token = _parse(content)
+    request_token = _parser(content)
     if not request_token.get('oauth_token', None):
-      raise Exception("Couldn't get a valid token from %s\n%s" % (provider, str(request_token)))
+      raise Exception("Couldn't get a valid token from %s\n%s" % 
+        (provider, str(request_token)))
       
     target_url = auth_urls['auth'].format(urlencode({
       'oauth_token': request_token.get('oauth_token', None),
@@ -244,14 +260,17 @@ class SimpleAuthHandler(object):
     if not verifier:
       raise Exception("No OAuth verifier was provided")
       
-    token = oauth1.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
+    token = oauth1.Token(request_token['oauth_token'], 
+                         request_token['oauth_token_secret'])
     token.set_verifier(verifier)
     client = self._oauth1_client(token, consumer_key, consumer_secret)
-    
     resp, content = client.request(access_token_url, "POST")
-    auth_info = getattr(self, self.TOKEN_RESPONSE_PARSERS[provider])(content)
-    user_data = getattr(self, '_get_%s_user_info' % provider)(auth_info, key=consumer_key, secret=consumer_secret)
-    
+
+    _parser = getattr(self, self.TOKEN_RESPONSE_PARSERS[provider])
+    _fetcher = getattr(self, '_get_%s_user_info' % provider)
+
+    auth_info = _parser(content)
+    user_data = _fetcher(auth_info, key=consumer_key, secret=consumer_secret)
     return (user_data, auth_info)
     
   def _openid_init(self, provider='openid', identity=None):
@@ -268,7 +287,9 @@ class SimpleAuthHandler(object):
       self.redirect(target_url)
       
     else:
-      logging.error('Either identity or callback were not specified (%s, %s)' % (identity_url, callback_url))
+      logging.error(
+        'Either identity or callback were not specified (%s, %s)' %
+        (identity_url, callback_url))
       self._provider_not_supported(provider)
       
   def _openid_callback(self, provider='openid', _identity=None):
@@ -295,15 +316,18 @@ class SimpleAuthHandler(object):
   
   def _callback_uri_for(self, provider):
     """Returns a callback URL for a 2nd step of the auth process.
+    
     Override this with something like:
-      
-      return self.uri_for('auth_callback', provider=provider, _full=True)
+    self.uri_for('auth_callback', provider=provider, _full=True)
     """
     return None
     
   def _get_consumer_info_for(self, provider):
-    """Should return a tuple (key, secret, desired_scopes).
-    Defaults to None. You should redefine this method and return real values."""
+    """Should return a (key, secret, desired_scopes) tuple.
+
+    Defaults to None.
+    You should redefine this method and return real values.
+    """
     return (None, None, None)
     
   #
@@ -322,42 +346,44 @@ class SimpleAuthHandler(object):
     return json.loads(resp)
     
   def _get_windows_live_user_info(self, auth_info, key=None, secret=None):
-    """Windows Live API user profile endpoint:
+    """Windows Live API user profile endpoint.
     https://apis.live.net/v5.0/me
     
     Profile picture:
     https://apis.live.net/v5.0/USER_ID/picture
     """
-    resp = self._oauth2_request(
-      'https://apis.live.net/v5.0/me?{0}', 
-      auth_info['access_token']
-    )
+    resp = self._oauth2_request('https://apis.live.net/v5.0/me?{0}', 
+                                auth_info['access_token'])
     uinfo = json.loads(resp)
-    uinfo.update(avatar_url='https://apis.live.net/v5.0/{0}/picture'.format(uinfo['id']))
+    avurl = 'https://apis.live.net/v5.0/{0}/picture'.format(uinfo['id'])
+    uinfo.update(avatar_url=avurl)
     return uinfo
     
   def _get_facebook_user_info(self, auth_info, key=None, secret=None):
-    """Facebook Graph API endpoint:
+    """Facebook Graph API endpoint.
     https://graph.facebook.com/me
     """
-    resp = self._oauth2_request(
-      'https://graph.facebook.com/me?{0}', 
-      auth_info['access_token']
-    )
+    resp = self._oauth2_request('https://graph.facebook.com/me?{0}', 
+                                auth_info['access_token'])
     return json.loads(resp)
     
   def _get_linkedin_user_info(self, auth_info, key=None, secret=None):
-    """Returns a dict of currently logging in linkedin user
+    """Returns a dict of currently logging in linkedin user.
+
     LinkedIn user profile API endpoint:
     http://api.linkedin.com/v1/people/~
     or
-    http://api.linkedin.com/v1/people/~:(id,first-name,last-name,picture-url,public-profile-url,headline)
+    http://api.linkedin.com/v1/people/~:<fields>
+    where <fields> is something like
+    (id,first-name,last-name,picture-url,public-profile-url,headline)
     """
-    token = oauth1.Token(key=auth_info['oauth_token'], secret=auth_info['oauth_token_secret'])
+    token = oauth1.Token(key=auth_info['oauth_token'], 
+                         secret=auth_info['oauth_token_secret'])
     client = self._oauth1_client(token, key, secret)
-    resp, content = client.request(
-      'http://api.linkedin.com/v1/people/~:(id,first-name,last-name,picture-url,public-profile-url,headline)'
-    )
+
+    fields = 'id,first-name,last-name,picture-url,public-profile-url,headline'
+    url = 'http://api.linkedin.com/v1/people/~:(%s)' % fields
+    resp, content = client.request(url)
     
     person = etree.fromstring(content)
     uinfo = {}
@@ -370,7 +396,8 @@ class SimpleAuthHandler(object):
     """Returns a dict of twitter user using
     https://api.twitter.com/1/account/verify_credentials.json
     """
-    token = oauth1.Token(key=auth_info['oauth_token'], secret=auth_info['oauth_token_secret'])
+    token = oauth1.Token(key=auth_info['oauth_token'],
+                         secret=auth_info['oauth_token_secret'])
     client = self._oauth1_client(token, key, secret)
     
     resp, content = client.request(
@@ -384,7 +411,8 @@ class SimpleAuthHandler(object):
   # aux methods
   #
   
-  def _oauth1_client(self, token=None, consumer_key=None, consumer_secret=None):
+  def _oauth1_client(self, token=None, consumer_key=None, 
+                     consumer_secret=None):
     """Returns OAuth 1.0 client that is capable of signing requests."""
     args = [oauth1.Consumer(key=consumer_key, secret=consumer_secret)]
     if token:
@@ -393,14 +421,18 @@ class SimpleAuthHandler(object):
     return oauth1.Client(*args)
   
   def _oauth2_request(self, url, token):
-    """Makes an HTTP request with OAuth 2.0 access token using App Engine URLfetch API"""
-    return urlfetch.fetch(url.format(urlencode({'access_token':token}))).content
+    """Makes an HTTP request with OAuth 2.0 access token using App Engine 
+    URLfetch API.
+    """
+    target_url = url.format(urlencode({'access_token':token}))
+    return urlfetch.fetch(target_url).content
     
   def _query_string_parser(self, body):
     """Parses response body of an access token request query and returns
     the result in JSON format.
     
-    Facebook, LinkedIn and Twitter respond with a query string, not JSON."""
+    Facebook, LinkedIn and Twitter respond with a query string, not JSON.
+    """
     return dict(urlparse.parse_qsl(body))
     
   def _json_parser(self, body):
