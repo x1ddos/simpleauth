@@ -3,16 +3,14 @@ import unittest
 from tests import TestMixin
 
 import time
-import hmac
 
 try:
   import json
 except ImportError:
   import simplejson as json
 
-from webapp2 import WSGIApplication, Route, RequestHandler, cached_property
-from webob import Request
-import httplib2
+from webapp2 import WSGIApplication, Route, RequestHandler
+from httplib2 import Response
 
 from simpleauth import SimpleAuthHandler
 
@@ -35,7 +33,7 @@ class OAuth1ClientMock(object):
     self._response_dict = kwargs
     
   def request(self, url, method):
-    return (httplib2.Response(self._response_dict), self._response_content)
+    return (Response(self._response_dict), self._response_content)
   
 class DummyAuthHandler(RequestHandler, SimpleAuthHandler):
   SESSION_MOCK = {}
@@ -306,7 +304,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     self.assertFalse(h._validate_csrf_token('a-secret', 'invalid', digest))
     self.assertFalse(h._validate_csrf_token('a-secret', token, 'invalid'))
 
-    timeout = long(time.time()) - h._CSRF_TOKEN_TIMEOUT - 1
+    timeout = long(time.time()) - h.OAUTH2_CSRF_TOKEN_TIMEOUT - 1
     token, digest = h._generate_csrf_token('a-secret', _time=timeout)
     self.assertFalse(h._validate_csrf_token('a-secret', token, digest))
 

@@ -107,12 +107,42 @@ CSRF protection
 
 You can optionally enable cross-site-request-forgery protection for OAuth 2.0:
 
-   class AuthHandler(SomeBaseRequestHandler, SimpleAuthHandler):
-     """Authentication handler for all kinds of auth."""
+   class AuthHandler(webapp2.RequestHandler, SimpleAuthHandler):
+
+     # enabled CSRF state token for OAuth 2.0
      OAUTH2_CSRF_STATE = True
+
      # ...
      # rest of the stuff from step 4 of the above.
 
 This will use the optional OAuth 2.0 'state' param to guard against CSRFs by
 setting a user session token during Authorization step and comparing it 
-with the provided 'state' parameter on callback.
+against 'state' parameter on callback.
+
+For this to work your handler has to have a session dict-like object on the 
+instance. Here's an example using webapp2_extras session:
+
+   import webapp2
+   from webapp2_extras import sessions
+
+   class AuthHandler(webapp2.RequestHandler, SimpleAuthHandler):
+     # enabled CSRF state token for OAuth 2.0
+     OAUTH2_CSRF_STATE = True
+
+     @webapp2.cached_property
+     def session(self):
+       """Returns a session using the default cookie key"""
+       return self.session_store.get_session()
+
+     def dispatch(self):
+       # Get a session store for this request.
+       self.session_store = sessions.get_store(request=self.request)
+       try:
+         # Dispatch the request.
+         webapp2.RequestHandler.dispatch(self)
+       finally:
+         # Save all sessions.
+         self.session_store.save_sessions(self.response)
+
+     # ...
+     # rest of the stuff from step 4 of the above.

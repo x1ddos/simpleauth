@@ -98,6 +98,7 @@ class SimpleAuthHandler(object):
   # instance. See BaseRequestHandler in example/handlers.py for sample usage.
   OAUTH2_CSRF_STATE = False
   OAUTH2_CSRF_SESSION_PARAM = 'oauth2_state'
+  OAUTH2_CSRF_TOKEN_TIMEOUT = 1*60*60 # 1 hour
   
   def _simple_auth(self, provider=None):
     """Dispatcher of auth init requests, e.g.
@@ -474,7 +475,6 @@ class SimpleAuthHandler(object):
 
 
   _CSRF_DELIMITER = '|' # token|time
-  _CSRF_TOKEN_TIMEOUT = 1*60*60 # 1 hour
 
   def _generate_csrf_token(self, secret, _time=None, _base=None):
     """Creates a new random token, digests it and returns (token, digest) 
@@ -512,17 +512,17 @@ class SimpleAuthHandler(object):
     try:
       base, ts = token.rsplit(self._CSRF_DELIMITER, 1)
       ts = long(ts)
-      if now - ts > self._CSRF_TOKEN_TIMEOUT:
+      if now - ts > self.OAUTH2_CSRF_TOKEN_TIMEOUT:
         logging.error("Token timeout: %d" % (now - ts))
         return False
     except (TypeError, ValueError):
       return False
 
-    _, actual = self._generate_csrf_token(secret, _time=ts, _base=base)
+    _, expected = self._generate_csrf_token(secret, _time=ts, _base=base)
 
-    if digest != actual:
+    if digest != expected:
       logging.error("Digests don't match. Expected [%s], got [%s]" %
-        (actual, digest))
+        (expected, digest))
       return False
 
     return True
