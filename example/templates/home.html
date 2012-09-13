@@ -2,6 +2,7 @@
 
 {% block main %}
   <p>This is a test app to demonstrate SimpleAuth.</p>
+  <p>Try logging in with one of these:</p>
   {% if logged_in %}
     <a href="{{ url_for('profile') }}" class="btn">my profile</a>
     <a href="/logout" class="btn">logout</a>

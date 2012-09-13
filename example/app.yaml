@@ -1,5 +1,5 @@
 # Most of the commens here are taken from:
-# http://code.google.com/appengine/docs/python/config/appconfig.html
+# https://developers.google.com/appengine/docs/python/config/appconfig
 
 # Replace 'your-app-id-goes-here' with your application ID.
 # Get it here if you don't have one: https://appengine.google.com/
@@ -33,6 +33,8 @@ default_expiration: "30d"
 # of template rendering in jinja2 and setuptools is required for some template
 # loading functionality.
 libraries:
+- name: webapp2
+  version: "2.5.1"
 - name: markupsafe
   version: "0.15"
 - name: setuptools
@@ -80,6 +82,7 @@ handlers:
 # dynamic handlers
 - url: /.*
   script: main.app
+  secure: always
 
 # The skip_files element specifies which files in the application directory 
 # are not to be uploaded to App Engine. The value is either a regular 
