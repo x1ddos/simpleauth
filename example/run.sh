@@ -14,6 +14,7 @@ DIR=`dirname $0`
 mkdir -p $DIR/tmp/blobs
 
 python2.7 `which dev_appserver.py` \
+  --skip_sdk_update_check \
   --address=$BIND_IP \
   --port=$BIND_PORT \
   --high_replication \

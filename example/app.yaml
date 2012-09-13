@@ -5,38 +5,34 @@
 # Get it here if you don't have one: https://appengine.google.com/
 application: simpleauth
 
-# Each version of an application retains its own copy of app.yaml.
-# When an application is uploaded, the version mentioned in the app.yaml file being uploaded is the version 
-# that gets created or replaced by the upload.
-version: 0-1
+# App version
+version: use-version-arg
 
 # Use Python 2.7 runtime here.
-# See this for more info: http://code.google.com/appengine/docs/python/python27/using27.html
+# See this for more info: 
+# http://code.google.com/appengine/docs/python/python27/using27.html
 runtime: python27
-
-# At this time, App Engine has one version of the python runtime environment: 1
 api_version: 1
 
 # Use concurrent requests
-threadsafe: false
+threadsafe: true
 
-# Defaul expiration time. If omitted, the production server sets the expiration to 10 minutes.
+# Defaul expiration time. If omitted, the production server sets the expiration
+# to 10 minutes.
 default_expiration: "30d"
 
-
-# The Python 2.7 runtime includes some additional third-party modules and makes them available on demand.
+# The Python 2.7 runtime includes some additional third-party modules 
+# and makes them available on demand.
 # http://code.google.com/appengine/docs/python/tools/libraries27.html
 #
-# See this on how to configure libraries:
-# http://code.google.com/appengine/docs/python/python27/using27.html#Configuring_Libraries
+# See 'Configuring Libraries' section on
+# http://code.google.com/appengine/docs/python/python27/using27.html
 #
-# When adding jinja2 to your library configuration, you may want to add markupsafe and setuptools as well. 
-# markupsafe improves the performance of template rendering in jinja2 and setuptools is required 
-# for some template loading functionality.
-
+# When adding jinja2 to your library configuration, you may want to 
+# add markupsafe and setuptools as well. markupsafe improves the performance
+# of template rendering in jinja2 and setuptools is required for some template
+# loading functionality.
 libraries:
-# - name: PIL         # Python Imaging Library
-#   version: "1.1.7"
 - name: markupsafe
   version: "0.15"
 - name: setuptools
@@ -48,133 +44,49 @@ libraries:
 
 # The Python SDK includes a number of builtin handlers 
 # for common application functions.
-
 builtins:
-  
-# # Redirects calls to /_ah/admin from the development console of the development web server 
-# # to the Admin Console dashboard page.
-# - admin_redirect: on
-
-# # Enables datastore admin (http://code.google.com/appengine/docs/adminconsole/datastoreadmin.html) 
-# # at /_ah/datastore_admin/. 
-# # This builtin enables the Datastore Admin page in the Admin Console, where you can delete all entities 
-# # of a given kind, or of all kinds, in the default namespace.
-# - datastore_admin: on
-
-# # Enables Appstats (http://code.google.com/appengine/docs/python/tools/appstats.html) at /_ah/stats/, 
-# # which you can use to measure your application's performance. 
-# # In order to use App Stats, you also need to Install the Event Recorder
-# # (http://code.google.com/appengine/docs/python/tools/appstats.html#Installing_the_Event_Recorder).
+# See this page for more info:
+# http://code.google.com/appengine/docs/python/tools/appstats.html
 # - appstats: on
 
-# # Enables the deferred handler at /_ah/queue/deferred. This builtin allows developers 
-# # to use deferred.defer() to simplify the creation of Task Queue tasks. 
-# # Also see Background work with the deferred library (http://code.google.com/appengine/articles/deferred.html).
+# Usage article:
+# http://code.google.com/appengine/articles/deferred.html
 # - deferred: on
 
-# # Enables the remote_api (http://code.google.com/appengine/docs/python/tools/uploadingdata.html#Setting_Up_remote_api) 
-# # builtin at /_ah/remote_api/. This builtin allows remote applications with the proper credentials 
-# # to access the datastore remotely.
+# More info on Setting Up Remote API:
+# http://code.google.com/appengine/docs/python/tools/uploadingdata.html
 # - remote_api: on
 
-
-inbound_services:
-# # Registers your application for notifications when a client connects or disconnects from a channel 
-# # (http://code.google.com/appengine/docs/python/channel/overview.html#Tracking_Client_Connections_and_Disconnections)
-# - channel_presence
-
-# # allows your application to receive mail (http://code.google.com/appengine/docs/python/mail/receivingmail.html)
-# - mail
-
-# # Allows your application to receive instant messages 
-# # (http://code.google.com/appengine/docs/python/xmpp/overview.html#Handling_Incoming_Calls)
-# - xmpp_message 
-
-# # Allows your application to receive a user's chat presence
-# - xmpp_presence
-
-# # allows your application to receive user subscription POSTs.
-# - xmpp_subscribe
-
-# # Enables warmup requests (http://code.google.com/appengine/docs/adminconsole/instances.html#Warmup_Requests)
-# - warmup
-
-    
 # A list of URL patterns and descriptions of how they should be handled. 
-# App Engine can handle URLs by executing application code, or by serving static files uploaded with the code, 
-# such as images, CSS or JavaScript.
-#
-# See http://code.google.com/appengine/docs/python/config/appconfig.html#Script_Handlers
-# and http://code.google.com/appengine/docs/python/config/appconfig.html#Static_File_Handlers
-
+# Reserved URLs (you can't use them): 
+#   /_ah/
+#   /form
 handlers:
-# # A URL prefix. This value uses regular expression syntax (and so regexp special characters must be escaped), 
-# # but it should not contain groupings. All URLs that begin with this prefix are handled by this handler, 
-# # using the portion of the URL after the prefix as part of the file path.
-# # Reserved URLs (you can't use them): 
-# #   /_ah/
-# #   /form
-#
-# - url: /posts.*
-#   script: posts.app   # Specifies the WSGI application (Python 2.7 only)
-#   login: required     # Optional.
-#                       #   required - once the user has signed in, the handler proceeds normally.
-#                       #   admin    - once the user has signed in, the handler checks whether the user is an administrator 
-#                       #              for the application. If not, the user is given an error message. 
-#                       #              If the user is an administrator, the handler proceeds.
-#   secure: optional    # Optional.
-#                       #   optional - Both HTTP and HTTPS requests with URLs that match the handler succeed without redirects.
-#                       #              The application can examine the request to determine which protocol was used, 
-#                       #              and respond accordingly. This is the default when secure is not provided for a handler.
-#                       #   never    - Requests for a URL that match this handler that use HTTPS are automatically redirected 
-#                       #              to the HTTP equivalent URL.
-#                       #   always   - Requests for a URL that match this handler that do not use HTTPS are automatically 
-#                       #              redirected to the HTTPS URL with the same path. Query parameters are preserved 
-#                       #              for the redirect. 
 
-
-# Request handlers for static content
-- url: /(.*\.(appcache|manifest))
-  mime_type: text/cache-manifest
-  static_files: static/\1
-  upload: static/(.*\.(appcache|manifest))
-  expiration: "0m"
-  
-- url: /(favicon\.ico|apple-touch-icon.*\.png)
+# static content handlers  
+- url: /favicon\.ico
   mime_type: image/png
   static_files: static/\1
-  upload: static/(favicon\.ico|apple-touch-icon.*\.png)
+  upload: static/favicon\.ico
 
-- url: /(robots\.txt|humans\.txt|crossdomain\.xml)
+- url: /robots\.txt
   static_files: static/\1
-  upload: static/(robots\.txt|humans\.txt|crossdomain\.xml)
+  upload: static/robots\.txt
 
-- url: /(img|css|js|swf)/(.*)
+- url: /(img|css)/(.*)
   static_files: static/\1/\2
-  upload: static/(img|css|js|swf)/(.*)
-  
-- url: /(.*\.html)
-  mime_type: text/html
-  static_files: static/\1
-  upload: static/(.*\.html)
+  upload: static/(img|css)/(.*)
     
-# dynamic Python app handlers
+# dynamic handlers
 - url: /.*
   script: main.app
 
-# Files in your application directory whose paths match a static_dir path or a static_files upload path 
-# are considered to be static files. All other files in the application directory are considered 
-# to be application program and data files.
-# 
-# The skip_files element specifies which files in the application directory are not to be uploaded 
-# to App Engine. The value is either a regular expression, or a list of regular expressions. 
-# Any filename that matches any of the regular expression is omitted from the list of files to upload 
+# The skip_files element specifies which files in the application directory 
+# are not to be uploaded to App Engine. The value is either a regular 
+# expression, or a list of regular expressions. Any filename that matches 
+# any of the regular expression is omitted from the list of files to upload 
 # when the application is uploaded.
 skip_files:
-- ^(.*/)?app\.yaml
-- ^(.*/)?app\.yml
-- ^(.*/)?index\.yaml
-- ^(.*/)?index\.yml
 - ^(.*/)?#.*#
 - ^(.*/)?.*~
 - ^(.*/)?.*sh
@@ -182,5 +94,6 @@ skip_files:
 - ^(.*/)?.*/RCS/.*
 - ^(.*/)?\..*
 - ^(.*/)?.*\.bak$
+- ^(.*/)?.*\.template$
 - tmp
 - tests

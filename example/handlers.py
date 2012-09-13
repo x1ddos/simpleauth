@@ -2,8 +2,6 @@
 import logging
 import secrets
 
-from ndb import Key
-
 import webapp2
 from webapp2_extras import auth, sessions, jinja2
 from jinja2.runtime import TemplateNotFound
@@ -90,13 +88,14 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
   """Authentication handler for OAuth 2.0, 1.0(a) and OpenID."""
   
   USER_ATTRS = {
-    'google'   : {
-      'picture': 'avatar_url',
+    'facebook' : {
+      'id'     : lambda id: ('avatar_url', 
+        'http://graph.facebook.com/{0}/picture?type=large'.format(id)),
       'name'   : 'name',
       'link'   : 'link'
     },
-    'facebook' : {
-      'id'     : lambda id: ('avatar_url', 'http://graph.facebook.com/{0}/picture?type=large'.format(id)),
+    'google'   : {
+      'picture': 'avatar_url',
       'name'   : 'name',
       'link'   : 'link'
     },
@@ -142,26 +141,23 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
       # check whether there's a user currently logged in
       # then, create a new user if nobody's signed in, 
       # otherwise add this auth_id to currently logged in user.
+      
+      _attrs = self._to_user_model_attrs(data, self.USER_ATTRS[provider])
+
       if self.logged_in:
         logging.info('Updating currently logged in user')
         
         u = self.current_user
         u.auth_ids.append(auth_id)
-        u.populate(**self._to_user_model_attrs(data, self.USER_ATTRS[provider]))
+        u.populate(**_attrs)
         u.put()
         
       else:
         logging.info('Creating a brand new user')
-        
-        ok, user = self.auth.store.user_model.create_user(
-          auth_id, **self._to_user_model_attrs(data, self.USER_ATTRS[provider])
-        )
-        
+        ok, user = self.auth.store.user_model.create_user(auth_id, **_attrs)
         if ok:
-          self.auth.set_session(
-            self.auth.store.user_to_dict(user)
-          )
-      
+          self.auth.set_session(self.auth.store.user_to_dict(user))
+
     # show them their profile data
     self.redirect('/profile')
 
