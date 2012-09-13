@@ -12,10 +12,22 @@
     <h1><a href="/">SimpleAuth demo</a></h1>
   </header>
   <div role="main" class="container" style="margin-bottom: 2em;">
+    {% for data, name in flashes %}
+      <h2>{{ name }}</h2>
+      <pre>{{ data }}</pre>
+    {% endfor %}
+    
     {% block main %}{% endblock %}
   </div>
-  <footer><nav><ul class="inline bull">
-    <li><a href="https://github.com/crhym3/simpleauth" target="_blank">https://github.com/crhym3/simpleauth</a></li>
-  </ul></nav></footer>
+  <footer>
+    <nav><ul class="inline bull">
+      <li>Source code and usage example:<br>
+        <a href="http://code.google.com/p/gae-simpleauth/" target="_blank",
+           title="Source code">
+          code.google.com/p/gae-simpleauth
+        </a>
+      </li>
+    </ul></nav>
+  </footer>
 </body>
 </html>

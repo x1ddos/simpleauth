@@ -91,7 +91,7 @@ img.avatar, .avatar img {
 footer {
   padding: 5px 0 10px 0;
   border-top: 1px solid #E4ECF3;
-  color: #72D2FF;
+  /*color: #72D2FF;*/
   font-size: 80%;
 }
 footer nav:after {

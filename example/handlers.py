@@ -50,8 +50,9 @@ class BaseRequestHandler(webapp2.RequestHandler):
   def render(self, template_name, template_vars={}):
     # Preset values for the template
     values = {
-      'url_for'    : self.uri_for,
-      'logged_in'  : self.logged_in
+      'url_for': self.uri_for,
+      'logged_in': self.logged_in,
+      'flashes': self.session.get_flashes()
     }
     
     # Add manually supplied template values
@@ -78,7 +79,8 @@ class ProfileHandler(BaseRequestHandler):
     """Handles GET /profile"""    
     if self.logged_in:
       self.render('profile.html', {
-        'user': self.current_user, 'session': self.auth.get_user_by_session()
+        'user': self.current_user, 
+        'session': self.auth.get_user_by_session()
       })
     else:
       self.redirect('/')
@@ -158,7 +160,12 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
         if ok:
           self.auth.set_session(self.auth.store.user_to_dict(user))
 
-    # show them their profile data
+    # Remember auth data during redirect, just for this demo. You wouldn't
+    # normally do this.
+    self.session.add_flash(data, 'data - from _on_signin(...)')
+    self.session.add_flash(auth_info, 'auth_info - from _on_signin(...)')
+
+    # Go to the profile page
     self.redirect('/profile')
 
   def logout(self):
