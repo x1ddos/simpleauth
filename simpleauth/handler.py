@@ -9,7 +9,6 @@ import urlparse
 # for CSRF state tokens
 import time
 import base64
-import hmac
 
 # Get available json parser
 try:
@@ -187,24 +186,26 @@ class SimpleAuthHandler(object):
     if not _valid:
       logging.error('Provider %s is not supported' % provider)
       self._provider_not_supported(provider)
-    else:
-      params = {
-        'response_type': 'code', 
-        'client_id': key, 
-        'redirect_uri': callback_url 
-      }
-      if scope:
-        params.update(scope=scope)
+      return
 
-      if self.OAUTH2_CSRF_STATE:
-        state, digest = self._generate_csrf_token(secret)
-        self.session[self.OAUTH2_CSRF_SESSION_PARAM] = state
-        params.update(state=digest)
+    params = {
+      'response_type': 'code', 
+      'client_id': key, 
+      'redirect_uri': callback_url 
+    }
 
-      target_url = auth_url.format(urlencode(params)) 
-      logging.debug('Redirecting user to %s' % target_url)
+    if scope:
+      params.update(scope=scope)
 
-      self.redirect(target_url)      
+    if self.OAUTH2_CSRF_STATE:
+      state = self._generate_csrf_token()
+      params.update(state=state)
+      self.session[self.OAUTH2_CSRF_SESSION_PARAM] = state
+
+    target_url = auth_url.format(urlencode(params)) 
+    logging.debug('Redirecting user to %s' % target_url)
+
+    self.redirect(target_url)      
     
   def _oauth2_callback(self, provider, access_token_url):
     """Step 2 of OAuth 2.0, whenever the user accepts or denies access."""
@@ -217,11 +218,11 @@ class SimpleAuthHandler(object):
       raise Exception(error)
 
     if self.OAUTH2_CSRF_STATE:
-      _token = self.session.pop(self.OAUTH2_CSRF_SESSION_PARAM, '')
-      _digest = self.request.get('state')
-      if not self._validate_csrf_token(client_secret, _token, _digest):
+      _expected = self.session.pop(self.OAUTH2_CSRF_SESSION_PARAM, '')
+      _actual = self.request.get('state')
+      if not self._validate_csrf_token(_expected, _actual):
         raise Exception('State parameter is not valid. '
-          'Token: [%s] Digest: [%s]' % (_token, _digest))
+          'Expected [%s], got [%s]' % (_expected, _actual))
       
     payload = {
       'code': code,
@@ -474,55 +475,41 @@ class SimpleAuthHandler(object):
     return json.loads(body)
 
 
-  _CSRF_DELIMITER = '|' # token|time
+  _CSRF_DELIMITER = ':' # token:timestamp
 
-  def _generate_csrf_token(self, secret, _time=None, _base=None):
-    """Creates a new random token, digests it and returns (token, digest) 
-    tuple.
+  def _generate_csrf_token(self, _time=None):
+    """Creates a new random token that can be safely used as a URL param.
 
-    Token would normally be stored in a user session, and digest is what's
-    being passed as 'state' param during OAuth 2.0 authorization step.
+    Token would normally be stored in a user session passed as 'state' 
+    parameter during OAuth 2.0 authorization step.
     """
     if _time is None:
       now = str(long(time.time()))
     else:
       now = str(_time)
 
-    if _base is None:
-      _base = base64.b64encode(os.urandom(16))
+    token = base64.urlsafe_b64encode(os.urandom(30))
+    return self._CSRF_DELIMITER.join([token, now])
 
-    token = self._CSRF_DELIMITER.join([_base, now])
-
-    dig = hmac.new(secret)
-    dig.update(token)
-
-    return (token, dig.hexdigest())
-
-  def _validate_csrf_token(self, secret, token, digest):
-    """Validates existing token against given digest.
+  def _validate_csrf_token(self, expected, actual):
+    """Validates expected token against the actual.
 
     Args:
-      secret: String, a random set of chars. It's safe to use client_secret 
-              here.
-      token: String, existing token. Normally stored in a user session.
-      digest: String, digested token. Being passed as 'state' param.
+      expected: String, existing token. Normally stored in a user session.
+      actual: String, token provided via 'state' param.
     """
-    now = long(time.time())
+    if not(expected and actual) or expected != actual:
+      return False
 
     try:
-      base, ts = token.rsplit(self._CSRF_DELIMITER, 1)
-      ts = long(ts)
-      if now - ts > self.OAUTH2_CSRF_TOKEN_TIMEOUT:
-        logging.error("Token timeout: %d" % (now - ts))
-        return False
+      token_time = long(expected.rsplit(self._CSRF_DELIMITER, 1)[-1])
     except (TypeError, ValueError):
       return False
 
-    _, expected = self._generate_csrf_token(secret, _time=ts, _base=base)
+    now = long(time.time())
+    timeout = now - token_time > self.OAUTH2_CSRF_TOKEN_TIMEOUT
 
-    if digest != expected:
-      logging.error("Digests don't match. Expected [%s], got [%s]" %
-        (expected, digest))
-      return False
+    if timeout:
+      logging.error("CSRF token timeout (issued at %d)" % token_time)
 
-    return True
+    return not timeout

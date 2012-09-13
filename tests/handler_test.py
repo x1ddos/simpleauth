@@ -93,15 +93,9 @@ class DummyAuthHandler(RequestHandler, SimpleAuthHandler):
   def _get_dummy_oauth2_user_info(self, auth_info, key=None, secret=None):
     return 'oauth2 mock user info'
 
-  def _generate_csrf_token(self, secret):
-    # We set provided secret as a session token
-    # and 'csrf-token-digest' as the state param during tests
-    return (secret, 'csrf-token-digest')
-
-  def _validate_csrf_token(self, secret, token, digest):
-    # During the tests digest should always be 'csrf-token-digest'
-    # and token == secret (see _generate_csrf_token() above)
-    return token == secret and digest == 'csrf-token-digest'
+  # Mocked token so we can test the value
+  def _generate_csrf_token(self, _time=None):
+    return 'valid-csrf-token'
 
 
 #
@@ -217,6 +211,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
   # 
   
   def test_csrf_default(self):
+    # Backward compatibility with older versions
     self.assertFalse(SimpleAuthHandler.OAUTH2_CSRF_STATE)
 
   def test_csrf_oauth2_init(self):
@@ -226,19 +221,21 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     self.assertEqual(resp.status_int, 302)
     self.assertEqual(resp.headers['Location'], 'https://dummy/oauth2?'
       'scope=a_scope&'
-      'state=csrf-token-digest&'
+      'state=valid-csrf-token&'
       'redirect_uri=%2Fauth%2Fdummy_oauth2%2Fcallback&'
       'response_type=code&'
       'client_id=cl_id')
 
     session = json.loads(resp.headers['SessionMock'])
     session_token = session.get(DummyAuthHandler.OAUTH2_CSRF_SESSION_PARAM, '')
-    self.assertEqual(session_token, 'cl_secret')
+    self.assertEqual(session_token, 'valid-csrf-token')
 
   def test_csrf_oauth2_callback_success(self):
+    # need a real token here to have a valid timestamp
+    csrf_token = SimpleAuthHandler()._generate_csrf_token()
     DummyAuthHandler.OAUTH2_CSRF_STATE = True
     DummyAuthHandler.SESSION_MOCK = {
-      DummyAuthHandler.OAUTH2_CSRF_SESSION_PARAM: 'cl_secret'
+      DummyAuthHandler.OAUTH2_CSRF_SESSION_PARAM: csrf_token
     }
 
     fetch_resp = json.dumps({
@@ -250,63 +247,69 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
       content=fetch_resp)
 
     resp = self.app.get_response('/auth/dummy_oauth2/callback?'
-      'code=auth-code&state=csrf-token-digest')
+      'code=auth-code&state=%s' % csrf_token)
 
     self.assertEqual(resp.status_int, 302)
     self.assertEqual(resp.headers['Location'], 
       'http://localhost/logged_in?provider=dummy_oauth2')
 
+    # token should be removed after during the authorization step
     session = json.loads(resp.headers['SessionMock'])
     self.assertFalse(DummyAuthHandler.OAUTH2_CSRF_SESSION_PARAM in session)
 
-  def test_csrf_oauth2_invalid_session_token(self):
+  def test_csrf_oauth2_failure(self):
     self.expectErrors()
     DummyAuthHandler.OAUTH2_CSRF_STATE = True
-    DummyAuthHandler.SESSION_MOCK = {
-      DummyAuthHandler.OAUTH2_CSRF_SESSION_PARAM: 'an-invalid-token'
-    }
+    DummyAuthHandler.SESSION_MOCK = {}
 
+    token = SimpleAuthHandler()._generate_csrf_token()
     resp = self.app.get_response('/auth/dummy_oauth2/callback?'
-      'code=auth-code&state=csrf-token-digest')
+      'code=auth-code&state=%s' % token)
 
     self.assertEqual(resp.status_int, 500)
     self.assertRegexpMatches(resp.body, 'State parameter is not valid')
 
-  def test_csrf_oauth2_invalid_state(self):
+  def test_csrf_oauth2_tokens_dont_match(self):
     self.expectErrors()
+
+    token1 = SimpleAuthHandler()._generate_csrf_token()
+    token2 = SimpleAuthHandler()._generate_csrf_token()
+    
     DummyAuthHandler.OAUTH2_CSRF_STATE = True
     DummyAuthHandler.SESSION_MOCK = {
-      DummyAuthHandler.OAUTH2_CSRF_SESSION_PARAM: 'cl_secret'
+      DummyAuthHandler.OAUTH2_CSRF_SESSION_PARAM: token1
     }
 
     resp = self.app.get_response('/auth/dummy_oauth2/callback?'
-      'code=auth-code&state=invalid-state')
+      'code=auth-code&state=%s' % token2)
 
     self.assertEqual(resp.status_int, 500)
     self.assertRegexpMatches(resp.body, 'State parameter is not valid')
 
   def test_csrf_token_generation(self):
-    handler = SimpleAuthHandler()
-    token, digest = handler._generate_csrf_token('a-secret')
-    self.assertNotEqual(token, digest) # :)
+    h = SimpleAuthHandler()
+    token = h._generate_csrf_token()
+    token2 = h._generate_csrf_token()
+    self.assertNotEqual(token, token2)
 
-    timestamp = long(token.split(DummyAuthHandler._CSRF_DELIMITER)[-1])
-    # token generation can't really take more than 1 sec
+    timestamp = long(token.split(h._CSRF_DELIMITER)[-1])
+    # token generation can't really take more than 1 sec here
     self.assertFalse(long(time.time()) - timestamp > 1)
 
   def test_csrf_validation(self):
     self.expectErrors()
     h = SimpleAuthHandler()
-    token, digest = h._generate_csrf_token('a-secret')
 
-    self.assertTrue(h._validate_csrf_token('a-secret', token, digest))
-    self.assertFalse(h._validate_csrf_token('invalid-secret', token, digest))
-    self.assertFalse(h._validate_csrf_token('a-secret', 'invalid', digest))
-    self.assertFalse(h._validate_csrf_token('a-secret', token, 'invalid'))
+    token = h._generate_csrf_token()
+    self.assertTrue(h._validate_csrf_token(token, token))
+    self.assertFalse(h._validate_csrf_token('', token))
+    self.assertFalse(h._validate_csrf_token(token, ''))
+    # no timestamp
+    self.assertFalse(h._validate_csrf_token('a-token', 'a-token'))
 
     timeout = long(time.time()) - h.OAUTH2_CSRF_TOKEN_TIMEOUT - 1
-    token, digest = h._generate_csrf_token('a-secret', _time=timeout)
-    self.assertFalse(h._validate_csrf_token('a-secret', token, digest))
+    token = h._generate_csrf_token(_time=timeout)
+    self.assertFalse(h._validate_csrf_token(token, token))
 
 
 if __name__ == '__main__':
