@@ -292,7 +292,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     token2 = h._generate_csrf_token()
     self.assertNotEqual(token, token2)
 
-    timestamp = long(token.split(h._CSRF_DELIMITER)[-1])
+    timestamp = long(token.split(h.OAUTH2_CSRF_DELIMITER)[-1])
     # token generation can't really take more than 1 sec here
     self.assertFalse(long(time.time()) - timestamp > 1)
 
@@ -304,9 +304,19 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     self.assertTrue(h._validate_csrf_token(token, token))
     self.assertFalse(h._validate_csrf_token('', token))
     self.assertFalse(h._validate_csrf_token(token, ''))
-    # no timestamp
-    self.assertFalse(h._validate_csrf_token('a-token', 'a-token'))
 
+    # no timestamp
+    token = 'ALzoMUGD%s' % h.OAUTH2_CSRF_DELIMITER
+    self.assertFalse(h._validate_csrf_token(token, token))
+    self.assertFalse(h._validate_csrf_token('ALzoMUGD', 'ALzoMUGD'))
+
+    # no token
+    now = str(long(time.time()))
+    token = h.OAUTH2_CSRF_DELIMITER.join(['', now])
+    self.assertFalse(h._validate_csrf_token(token, token))
+    self.assertFalse(h._validate_csrf_token(now, now))
+
+    # token timeout
     timeout = long(time.time()) - h.OAUTH2_CSRF_TOKEN_TIMEOUT - 1
     token = h._generate_csrf_token(_time=timeout)
     self.assertFalse(h._validate_csrf_token(token, token))

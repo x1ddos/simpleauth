@@ -97,7 +97,10 @@ class SimpleAuthHandler(object):
   # instance. See BaseRequestHandler in example/handlers.py for sample usage.
   OAUTH2_CSRF_STATE = False
   OAUTH2_CSRF_SESSION_PARAM = 'oauth2_state'
-  OAUTH2_CSRF_TOKEN_TIMEOUT = 1*60*60 # 1 hour
+  OAUTH2_CSRF_TOKEN_TIMEOUT = 3600 # 1 hour
+  # This will form the actual state parameter, e.g. token:timestamp
+  # You don't normally need to override it.
+  OAUTH2_CSRF_DELIMITER = ':'
   
   def _simple_auth(self, provider=None):
     """Dispatcher of auth init requests, e.g.
@@ -474,22 +477,15 @@ class SimpleAuthHandler(object):
     """Parses body string into JSON dict"""
     return json.loads(body)
 
-
-  _CSRF_DELIMITER = ':' # token:timestamp
-
   def _generate_csrf_token(self, _time=None):
     """Creates a new random token that can be safely used as a URL param.
 
-    Token would normally be stored in a user session passed as 'state' 
+    Token would normally be stored in a user session and passed as 'state' 
     parameter during OAuth 2.0 authorization step.
     """
-    if _time is None:
-      now = str(long(time.time()))
-    else:
-      now = str(_time)
-
+    now = str(_time or long(time.time()))
     token = base64.urlsafe_b64encode(os.urandom(30))
-    return self._CSRF_DELIMITER.join([token, now])
+    return self.OAUTH2_CSRF_DELIMITER.join([token, now])
 
   def _validate_csrf_token(self, expected, actual):
     """Validates expected token against the actual.
@@ -498,12 +494,22 @@ class SimpleAuthHandler(object):
       expected: String, existing token. Normally stored in a user session.
       actual: String, token provided via 'state' param.
     """
-    if not(expected and actual) or expected != actual:
+    if expected != actual:
       return False
 
     try:
-      token_time = long(expected.rsplit(self._CSRF_DELIMITER, 1)[-1])
-    except (TypeError, ValueError):
+      token_key, token_time = expected.rsplit(self.OAUTH2_CSRF_DELIMITER, 1)
+      token_time = long(token_time)
+      # Make it throw TypeError if token_key is empty.
+      # There are other values which could pass the check anyway, e.g. " ". 
+      # Most likely that would mean the user session can be tampered with 
+      # freely and the app probably has bigger problems than this token 
+      # validation.
+      # Alternative implementation could involve HMAC digest. If anything 
+      # serious pops up (e.g. see this SO question: http://goo.gl/3hiOv)
+      # please submit a bug on the issue tracker.
+      base64.urlsafe_b64decode(token_key.encode('ascii') or 'invalid')
+    except (TypeError, ValueError, UnicodeDecodeError):
       return False
 
     now = long(time.time())
