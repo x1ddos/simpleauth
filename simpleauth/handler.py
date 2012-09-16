@@ -130,7 +130,7 @@ class SimpleAuthHandler(object):
         self._auth_error(provider, msg=error_msg)
         
     else:
-      logging.error('Provider %s is not supported' % provider)
+      logging.error('Provider %s is not supported', provider)
       self._provider_not_supported(provider)
       
   def _auth_callback(self, provider=None):
@@ -156,7 +156,7 @@ class SimpleAuthHandler(object):
         logging.error(error_msg)
         self._auth_error(provider, msg=error_msg)
     else:
-      logging.error('Provider %s is not supported' % provider)
+      logging.error('Provider %s is not supported', provider)
       self._provider_not_supported(provider)
     
   def _provider_not_supported(self, provider=None):
@@ -187,7 +187,7 @@ class SimpleAuthHandler(object):
     
     _valid = key and secret and auth_url and callback_url
     if not _valid:
-      logging.error('Provider %s is not supported' % provider)
+      logging.error('Provider %s is not supported', provider)
       self._provider_not_supported(provider)
       return
 
@@ -206,7 +206,7 @@ class SimpleAuthHandler(object):
       self.session[self.OAUTH2_CSRF_SESSION_PARAM] = state
 
     target_url = auth_url.format(urlencode(params)) 
-    logging.debug('Redirecting user to %s' % target_url)
+    logging.debug('Redirecting user to %s', target_url)
 
     self.redirect(target_url)      
     
@@ -280,7 +280,7 @@ class SimpleAuthHandler(object):
       'oauth_callback': callback_url
     }))
     
-    logging.debug('Redirecting user to %s' % target_url)
+    logging.debug('Redirecting user to %s', target_url)
     
     # save request token for later, the callback
     self.session['req_token'] = request_token
@@ -321,13 +321,13 @@ class SimpleAuthHandler(object):
         dest_url=callback_url,
         federated_identity=identity_url
       )
-      logging.debug('Redirecting user to %s' % target_url)
+      logging.debug('Redirecting user to %s', target_url)
       self.redirect(target_url)
       
     else:
       logging.error(
-        'Either identity or callback were not specified (%s, %s)' %
-        (identity_url, callback_url))
+        'Either identity or callback were not specified (%s, %s)',
+        identity_url, callback_url)
       self._provider_not_supported(provider)
       
   def _openid_callback(self, provider='openid', _identity=None):
@@ -511,6 +511,6 @@ class SimpleAuthHandler(object):
     timeout = now - token_time > self.OAUTH2_CSRF_TOKEN_TIMEOUT
 
     if timeout:
-      logging.error("CSRF token timeout (issued at %d)" % token_time)
+      logging.error("CSRF token timeout (issued at %d)", token_time)
 
     return not timeout
