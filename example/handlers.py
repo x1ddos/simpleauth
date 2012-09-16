@@ -88,6 +88,9 @@ class ProfileHandler(BaseRequestHandler):
 
 class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
   """Authentication handler for OAuth 2.0, 1.0(a) and OpenID."""
+
+  # Enable optional OAuth 2.0 CSRF guard
+  OAUTH2_CSRF_STATE = True
   
   USER_ATTRS = {
     'facebook' : {
