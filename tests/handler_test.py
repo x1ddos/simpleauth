@@ -3,6 +3,7 @@ import unittest
 from tests import TestMixin
 
 import time
+import base64
 
 try:
   import json
@@ -292,29 +293,37 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     token2 = h._generate_csrf_token()
     self.assertNotEqual(token, token2)
 
-    timestamp = long(token.split(h.OAUTH2_CSRF_DELIMITER)[-1])
+    decoded = base64.urlsafe_b64decode(token)
+    tok, ts = decoded.rsplit(h.OAUTH2_CSRF_DELIMITER, 1)
+    # > 10 so that I won't have to modify this test if the length changes
+    # in the future
+    self.assertTrue(len(tok) > 10)
     # token generation can't really take more than 1 sec here
-    self.assertFalse(long(time.time()) - timestamp > 1)
+    self.assertFalse(long(time.time()) - long(ts) > 1)
 
   def test_csrf_validation(self):
     self.expectErrors()
     h = SimpleAuthHandler()
 
     token = h._generate_csrf_token()
+    token2 = h._generate_csrf_token()
     self.assertTrue(h._validate_csrf_token(token, token))
+    self.assertFalse(h._validate_csrf_token(token, token2))
     self.assertFalse(h._validate_csrf_token('', token))
     self.assertFalse(h._validate_csrf_token(token, ''))
+    self.assertFalse(h._validate_csrf_token('', ''))
+    self.assertFalse(h._validate_csrf_token('invalid b64', 'invalid b64'))
 
     # no timestamp
-    token = 'ALzoMUGD%s' % h.OAUTH2_CSRF_DELIMITER
+    token = base64.urlsafe_b64encode('random')
     self.assertFalse(h._validate_csrf_token(token, token))
-    self.assertFalse(h._validate_csrf_token('ALzoMUGD', 'ALzoMUGD'))
+    token = base64.urlsafe_b64encode('random%s' % h.OAUTH2_CSRF_DELIMITER)
+    self.assertFalse(h._validate_csrf_token(token, token))
 
-    # no token
-    now = str(long(time.time()))
-    token = h.OAUTH2_CSRF_DELIMITER.join(['', now])
-    self.assertFalse(h._validate_csrf_token(token, token))
-    self.assertFalse(h._validate_csrf_token(now, now))
+    # no token key
+    token = '%s%d' % (h.OAUTH2_CSRF_DELIMITER, long(time.time()))
+    encoded = base64.urlsafe_b64encode(token)
+    self.assertFalse(h._validate_csrf_token(encoded, encoded))
 
     # token timeout
     timeout = long(time.time()) - h.OAUTH2_CSRF_TOKEN_TIMEOUT - 1

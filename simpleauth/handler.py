@@ -31,7 +31,7 @@ import oauth2 as oauth1
 
 # users module is needed for OpenID authentication.
 from google.appengine.api import urlfetch, users
-
+from webapp2_extras import security
 
 __all__ = ['SimpleAuthHandler']
 
@@ -484,8 +484,9 @@ class SimpleAuthHandler(object):
     parameter during OAuth 2.0 authorization step.
     """
     now = str(_time or long(time.time()))
-    token = base64.urlsafe_b64encode(os.urandom(30))
-    return self.OAUTH2_CSRF_DELIMITER.join([token, now])
+    secret = security.generate_random_string(30, pool=security.ASCII_PRINTABLE)
+    token = self.OAUTH2_CSRF_DELIMITER.join([secret, now])
+    return base64.urlsafe_b64encode(token)
 
   def _validate_csrf_token(self, expected, actual):
     """Validates expected token against the actual.
@@ -498,17 +499,11 @@ class SimpleAuthHandler(object):
       return False
 
     try:
-      token_key, token_time = expected.rsplit(self.OAUTH2_CSRF_DELIMITER, 1)
+      decoded = base64.urlsafe_b64decode(expected.encode('ascii'))
+      token_key, token_time = decoded.rsplit(self.OAUTH2_CSRF_DELIMITER, 1)
       token_time = long(token_time)
-      # Make it throw TypeError if token_key is empty.
-      # There are other values which could pass the check anyway, e.g. " ". 
-      # Most likely that would mean the user session can be tampered with 
-      # freely and the app probably has bigger problems than this token 
-      # validation.
-      # Alternative implementation could involve HMAC digest. If anything 
-      # serious pops up (e.g. see this SO question: http://goo.gl/3hiOv)
-      # please submit a bug on the issue tracker.
-      base64.urlsafe_b64decode(token_key.encode('ascii') or 'invalid')
+      if not token_key:
+        return False
     except (TypeError, ValueError, UnicodeDecodeError):
       return False
 

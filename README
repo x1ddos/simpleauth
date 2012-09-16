@@ -146,3 +146,12 @@ instance. Here's an example using webapp2_extras session:
 
      # ...
      # rest of the stuff from step 4 of the above.
+
+This simple implementation assumes it is safe to use user sessions.
+If, however, user's session can be hijacked, the authentication flow could
+probably be bypassed anyway and this CSRF protection becomes the least 
+of the problems.
+
+Alternative implementation could involve HMAC digest. If anything serious 
+pops up (e.g. see this SO question: http://goo.gl/3hiOv) please submit 
+a bug on the issue tracker.
