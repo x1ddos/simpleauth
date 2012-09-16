@@ -32,7 +32,7 @@ Getting Started
 3. You'll also need to get python-oauth2 (pip install oauth2) 
    and httplib2 (http://code.google.com/p/httplib2/)
 
-3. Create a request handler by subclassing SimpleAuthHandler, e.g.
+4. Create a request handler by subclassing SimpleAuthHandler, e.g.
 
    class AuthHandler(SomeBaseRequestHandler, SimpleAuthHandler):
      """Authentication handler for all kinds of auth."""
@@ -83,7 +83,7 @@ Getting Started
 Note that SimpleAuthHandler isn't a real request handler. It's up to you.
 For instance, SomeBaseRequestHandler could be webapp2.RequestHandler.
 
-4. Add routing so that '/auth/PROVIDER', '/auth/PROVIDER/callback' and '/logout' requests
+5. Add routing so that '/auth/PROVIDER', '/auth/PROVIDER/callback' and '/logout' requests
    go to your AuthHandler. 
    
    For instance, in webapp2 you could do:
@@ -98,6 +98,60 @@ For instance, SomeBaseRequestHandler could be webapp2.RequestHandler.
        handler='handlers.AuthHandler:logout', name='logout')
    ]
    
-5. That's it. See a sample app in the example dir. 
+6. That's it. See a sample app in the example dir. 
    To run the example app, copy example/secrets.py.template into example/secrets.py
    and start the app locally by executing run.sh
+
+CSRF protection
+================
+
+You can optionally enable cross-site-request-forgery protection for OAuth 2.0:
+
+   class AuthHandler(webapp2.RequestHandler, SimpleAuthHandler):
+
+     # enabled CSRF state token for OAuth 2.0
+     OAUTH2_CSRF_STATE = True
+
+     # ...
+     # rest of the stuff from step 4 of the above.
+
+This will use the optional OAuth 2.0 'state' param to guard against CSRFs by
+setting a user session token during Authorization step and comparing it 
+against 'state' parameter on callback.
+
+For this to work your handler has to have a session dict-like object on the 
+instance. Here's an example using webapp2_extras session:
+
+   import webapp2
+   from webapp2_extras import sessions
+
+   class AuthHandler(webapp2.RequestHandler, SimpleAuthHandler):
+     # enabled CSRF state token for OAuth 2.0
+     OAUTH2_CSRF_STATE = True
+
+     @webapp2.cached_property
+     def session(self):
+       """Returns a session using the default cookie key"""
+       return self.session_store.get_session()
+
+     def dispatch(self):
+       # Get a session store for this request.
+       self.session_store = sessions.get_store(request=self.request)
+       try:
+         # Dispatch the request.
+         webapp2.RequestHandler.dispatch(self)
+       finally:
+         # Save all sessions.
+         self.session_store.save_sessions(self.response)
+
+     # ...
+     # rest of the stuff from step 4 of the above.
+
+This simple implementation assumes it is safe to use user sessions.
+If, however, user's session can be hijacked, the authentication flow could
+probably be bypassed anyway and this CSRF protection becomes the least 
+of the problems.
+
+Alternative implementation could involve HMAC digest. If anything serious 
+pops up (e.g. see this SO question: http://goo.gl/3hiOv) please submit 
+a bug on the issue tracker.

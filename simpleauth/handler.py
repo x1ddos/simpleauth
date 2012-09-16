@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
+import os
 import sys
 import logging
 
 from urllib import urlencode
 import urlparse
+
+# for CSRF state tokens
+import time
+import base64
 
 # Get available json parser
 try:
@@ -26,7 +31,7 @@ import oauth2 as oauth1
 
 # users module is needed for OpenID authentication.
 from google.appengine.api import urlfetch, users
-
+from webapp2_extras import security
 
 __all__ = ['SimpleAuthHandler']
 
@@ -83,6 +88,19 @@ class SimpleAuthHandler(object):
     'linkedin'    : '_query_string_parser',
     'twitter'     : '_query_string_parser'
   }
+
+  # Set this to True in your handler if you want to use 
+  # 'state' param during authorization phase to guard agains
+  # cross-site-request-forgery
+  # 
+  # CSRF protection assumes there's self.session method on the handler 
+  # instance. See BaseRequestHandler in example/handlers.py for sample usage.
+  OAUTH2_CSRF_STATE = False
+  OAUTH2_CSRF_SESSION_PARAM = 'oauth2_state'
+  OAUTH2_CSRF_TOKEN_TIMEOUT = 3600 # 1 hour
+  # This will form the actual state parameter, e.g. token:timestamp
+  # You don't normally need to override it.
+  OAUTH2_CSRF_DELIMITER = ':'
   
   def _simple_auth(self, provider=None):
     """Dispatcher of auth init requests, e.g.
@@ -167,23 +185,30 @@ class SimpleAuthHandler(object):
     key, secret, scope = self._get_consumer_info_for(provider)
     callback_url = self._callback_uri_for(provider)
     
-    if key and secret and auth_url and callback_url:
-      params = {
-        'response_type': 'code', 
-        'client_id': key, 
-        'redirect_uri': callback_url 
-      }
-      if scope:
-        params.update(scope=scope)
-
-      target_url = auth_url.format(urlencode(params)) 
-      logging.debug('Redirecting user to %s' % target_url)
-
-      self.redirect(target_url)
-      
-    else:
+    _valid = key and secret and auth_url and callback_url
+    if not _valid:
       logging.error('Provider %s is not supported' % provider)
       self._provider_not_supported(provider)
+      return
+
+    params = {
+      'response_type': 'code', 
+      'client_id': key, 
+      'redirect_uri': callback_url 
+    }
+
+    if scope:
+      params.update(scope=scope)
+
+    if self.OAUTH2_CSRF_STATE:
+      state = self._generate_csrf_token()
+      params.update(state=state)
+      self.session[self.OAUTH2_CSRF_SESSION_PARAM] = state
+
+    target_url = auth_url.format(urlencode(params)) 
+    logging.debug('Redirecting user to %s' % target_url)
+
+    self.redirect(target_url)      
     
   def _oauth2_callback(self, provider, access_token_url):
     """Step 2 of OAuth 2.0, whenever the user accepts or denies access."""
@@ -194,6 +219,13 @@ class SimpleAuthHandler(object):
     
     if error:
       raise Exception(error)
+
+    if self.OAUTH2_CSRF_STATE:
+      _expected = self.session.pop(self.OAUTH2_CSRF_SESSION_PARAM, '')
+      _actual = self.request.get('state')
+      if not self._validate_csrf_token(_expected, _actual):
+        raise Exception('State parameter is not valid. '
+          'Expected [%s], got [%s]' % (_expected, _actual))
       
     payload = {
       'code': code,
@@ -444,3 +476,41 @@ class SimpleAuthHandler(object):
   def _json_parser(self, body):
     """Parses body string into JSON dict"""
     return json.loads(body)
+
+  def _generate_csrf_token(self, _time=None):
+    """Creates a new random token that can be safely used as a URL param.
+
+    Token would normally be stored in a user session and passed as 'state' 
+    parameter during OAuth 2.0 authorization step.
+    """
+    now = str(_time or long(time.time()))
+    secret = security.generate_random_string(30, pool=security.ASCII_PRINTABLE)
+    token = self.OAUTH2_CSRF_DELIMITER.join([secret, now])
+    return base64.urlsafe_b64encode(token)
+
+  def _validate_csrf_token(self, expected, actual):
+    """Validates expected token against the actual.
+
+    Args:
+      expected: String, existing token. Normally stored in a user session.
+      actual: String, token provided via 'state' param.
+    """
+    if expected != actual:
+      return False
+
+    try:
+      decoded = base64.urlsafe_b64decode(expected.encode('ascii'))
+      token_key, token_time = decoded.rsplit(self.OAUTH2_CSRF_DELIMITER, 1)
+      token_time = long(token_time)
+      if not token_key:
+        return False
+    except (TypeError, ValueError, UnicodeDecodeError):
+      return False
+
+    now = long(time.time())
+    timeout = now - token_time > self.OAUTH2_CSRF_TOKEN_TIMEOUT
+
+    if timeout:
+      logging.error("CSRF token timeout (issued at %d)" % token_time)
+
+    return not timeout
