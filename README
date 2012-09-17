@@ -97,7 +97,15 @@ For instance, SomeBaseRequestHandler could be webapp2.RequestHandler.
      Route('/logout',
        handler='handlers.AuthHandler:logout', name='logout')
    ]
-   
+
+You could go even further and define routes to match the only providers your
+app supports, e.g.:
+
+     Route('/auth/<provider:(oauth2|oauth1)>', ...)
+
+That way the app will throw 404 Not Found for auth requests you don't want
+to handle.
+
 6. That's it. See a sample app in the example dir. 
    To run the example app, copy example/secrets.py.template into example/secrets.py
    and start the app locally by executing run.sh

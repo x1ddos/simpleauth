@@ -19,9 +19,6 @@ from simpleauth import SimpleAuthHandler
 # test subjects
 #
 
-class NotSupportedException(Exception):
-  """Provider not supported"""
-  pass
 
 class DummyAuthError(Exception):
   """Generic auth error for Dummy handler"""
@@ -73,12 +70,8 @@ class DummyAuthHandler(RequestHandler, SimpleAuthHandler):
       'dummy_oauth2': ('cl_id', 'cl_secret', 'a_scope'),
     }.get(provider, (None, None))
     
-  def _provider_not_supported(self, provider):
-    raise NotSupportedException(provider)
-
   def _auth_error(self, provider, msg=None):
-    raise DummyAuthError(
-      "Couldn't authenticate against %s: %s" % (provider, msg))
+    raise DummyAuthError(msg)
 
   # Mocks
 
@@ -140,15 +133,15 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
 
   def test_not_supported_provider(self):
     self.expectErrors()
-    with self.assertRaises(NotSupportedException):
+    with self.assertRaises(DummyAuthError):
       self.handler._simple_auth()
       
-    with self.assertRaises(NotSupportedException):
+    with self.assertRaises(DummyAuthError):
       self.handler._simple_auth('whatever')
 
     resp = self.app.get_response('/auth/xxx')
     self.assertEqual(resp.status_int, 500)
-    self.assertRegexpMatches(resp.body, 'NotSupportedException: xxx')
+    self.assertRegexpMatches(resp.body, 'DummyAuthError: Unknown provider')
 
   def test_openid_init(self):
     resp = self.app.get_response('/auth/openid?identity_url=some.oid.provider.com')

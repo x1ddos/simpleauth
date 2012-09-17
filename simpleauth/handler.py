@@ -33,7 +33,29 @@ import oauth2 as oauth1
 from google.appengine.api import urlfetch, users
 from webapp2_extras import security
 
-__all__ = ['SimpleAuthHandler']
+__all__ = ['SimpleAuthHandler',
+           'Error',
+           'AuthInitError',
+           'AuthCallbackError']
+
+
+class Error(Exception):
+  """Base error class for this module"""
+  def __init__(self, *args, **kwargs):
+    super(Error, self).__init__(*args)
+    self.provider = kwargs.pop('provider', 'undefined')
+
+  def __str__(self):
+    _repr = super(Error, self).__str__()
+    return _repr + ' (auth provider: %s)' % self.provider
+
+class AuthInitError(Error):
+  """Initialization for a specific auth flow failed"""
+  pass
+
+class AuthCallbackError(Error):
+  """Something went wrong during a callback phase"""
+  pass
 
 
 class SimpleAuthHandler(object):
@@ -106,93 +128,72 @@ class SimpleAuthHandler(object):
     """Dispatcher of auth init requests, e.g.
     GET /auth/PROVIDER
     
-    It'll call _<authtype>_init() method, where
-    <authtype> is oauth2, oauth1 or openid (defined in PROVIDERS dict).
+    Calls _<authtype>_init() method, where <authtype> is
+    oauth2, oauth1 or openid (defined in PROVIDERS dict).
     
     If a particular provider is not defined in the PROVIDERS
-    or _<authtype>_init() does not exist for a specific auth type, 
-    it'll fall back to self._provider_not_supported() passing in the 
-    original provider name.
+    or _<authtype>_init() method does not exist, calls self._auth_error()
+    passing in provider name and an error message.
     """
     cfg = self.PROVIDERS.get(provider, (None,))
     meth = '_%s_init' % cfg[0]
-    if hasattr(self, meth):
-      try:
-        
-        # initiate openid, oauth1 or oauth2 authentication
-        # we don't respond directly in here: specific methods are in charge 
-        # with redirecting user to an auth endpoint
-        getattr(self, meth)(provider, cfg[1])
-        
-      except:
-        error_msg = str(sys.exc_info()[1])
-        logging.error(error_msg)
-        self._auth_error(provider, msg=error_msg)
-        
-    else:
-      logging.error('Provider %s is not supported', provider)
-      self._provider_not_supported(provider)
+    try:
+      # initiate openid, oauth1 or oauth2 authentication
+      # we don't respond directly in here: specific methods are in charge
+      # with redirecting user to an auth endpoint
+      getattr(self, meth)(provider, cfg[1])
+
+    except Error as e:
+      self._auth_error(provider, msg=str(e))
+    except AttributeError:
+      self._auth_error(provider, msg='Unknown provider')
       
   def _auth_callback(self, provider=None):
     """Dispatcher of callbacks from auth providers, e.g.
     /auth/PROVIDER/callback?params=...
     
-    It'll call _<authtype>_callback() method, where
-    <authtype> is oauth2, oauth1 or openid (defined in PROVIDERS dict).
+    Calls _<authtype>_callback() method, where <authtype> is
+    oauth2, oauth1 or openid (defined in PROVIDERS dict).
     
-    Falls back to self._provider_not_supported(provider).
+    Falls back to self._auth_error() passing in provider name
+    and an error message.
     """
     cfg = self.PROVIDERS.get(provider, (None,))
     meth = '_%s_callback' % cfg[0]
-    if hasattr(self, meth):
-      try:
+    try:
+      # Get user profile data and their access token
+      user_data, auth_info = getattr(self, meth)(provider, *cfg[-1:])
+      # The rest should be implemented by the actual app
+      self._on_signin(user_data, auth_info, provider)
+
+    except Error as e:
+      self._auth_error(provider, msg=str(e))
+    except AttributeError:
+      self._auth_error(provider, msg='Unknown provider')
         
-        user_data, auth_info = getattr(self, meth)(provider, *cfg[-1:])
-        # we're done here. the rest should be implemented by the actual app
-        self._on_signin(user_data, auth_info, provider)
-        
-      except:
-        error_msg = str(sys.exc_info()[1])
-        logging.error(error_msg)
-        self._auth_error(provider, msg=error_msg)
-    else:
-      logging.error('Provider %s is not supported', provider)
-      self._provider_not_supported(provider)
-    
-  def _provider_not_supported(self, provider=None):
-    """Callback triggered whenever user's trying to authenticate agains 
-    a provider we don't support, or provider wasn't specified for some reason.
-    
-    Defaults to redirecting to / (root). 
-    Override this method for a custom behaviour.
-    """
-    self.redirect('/')
-    
   def _auth_error(self, provider, msg=None):
     """Being called on any error during auth process, with optional text 
     message provided. 
 
     Defaults to redirecting to /
     """
+    logging.error('%s (provider: %s)', msg, provider)
     self.redirect('/')
 
   def _oauth2_init(self, provider, auth_url):
     """Initiates OAuth 2.0 dance. 
 
-    Falls back to self._provider_not_supported(provider) if either key 
-    or secret is missing.
+    Raises AuthInitError if either key, secret or other info needed for the
+    flow to work is missing.
     """
     key, secret, scope = self._get_consumer_info_for(provider)
     callback_url = self._callback_uri_for(provider)
-    
-    _valid = key and secret and auth_url and callback_url
-    if not _valid:
-      logging.error('Provider %s is not supported', provider)
-      self._provider_not_supported(provider)
-      return
+    if not(key and secret and auth_url and callback_url):
+      raise AuthInitError('key, secret, auth_url or callback is missing',
+        provider=provider)
 
     params = {
-      'response_type': 'code', 
+      'response_type': 'code',
       'client_id': key, 
       'redirect_uri': callback_url 
     }
@@ -212,20 +213,21 @@ class SimpleAuthHandler(object):
     
   def _oauth2_callback(self, provider, access_token_url):
     """Step 2 of OAuth 2.0, whenever the user accepts or denies access."""
-    code = self.request.get('code', None)
     error = self.request.get('error', None)
+    if error:
+      raise AuthCallbackError(error, provider=provider)
+
+    code = self.request.get('code', None)
     callback_url = self._callback_uri_for(provider)
     client_id, client_secret, scope = self._get_consumer_info_for(provider)
-    
-    if error:
-      raise Exception(error)
 
     if self.OAUTH2_CSRF_STATE:
       _expected = self.session.pop(self.OAUTH2_CSRF_SESSION_PARAM, '')
       _actual = self.request.get('state')
       if not self._validate_csrf_token(_expected, _actual):
-        raise Exception('State parameter is not valid. '
-          'Expected [%s], got [%s]' % (_expected, _actual))
+        raise AuthCallbackError(
+          'State parameter is not valid. '
+          'Expected [%s], got [%s]' % (_expected, _actual), provider=provider)
       
     payload = {
       'code': code,
@@ -260,20 +262,21 @@ class SimpleAuthHandler(object):
     _valid = key or secret or \
              token_request_url or auth_url or callback_url or _parser
     if not(_valid):
-      raise Exception('Provider %s is not supported' % provider)
+      raise AuthInitError('Not supported', provider=provider)
       
     # make a request_token request
     client = self._oauth1_client(consumer_key=key, consumer_secret=secret)
     resp, content = client.request(auth_urls['request'], "GET")
     
     if resp.status != 200:
-      raise Exception("Could not fetch a valid response from %s" % provider)
+      raise AuthInitError("Request token response status: %d" % resp.status,
+        provider=provider)
     
     # parse token request response
     request_token = _parser(content)
     if not request_token.get('oauth_token', None):
-      raise Exception("Couldn't get a valid token from %s\n%s" % 
-        (provider, str(request_token)))
+      raise AuthInitError("Couldn't get a valid token from %s" %
+        str(request_token), provider=provider)
       
     target_url = auth_urls['auth'].format(urlencode({
       'oauth_token': request_token.get('oauth_token', None),
@@ -289,15 +292,16 @@ class SimpleAuthHandler(object):
   def _oauth1_callback(self, provider, access_token_url):
     """Third step of OAuth 1.0 dance."""
     request_token = self.session.pop('req_token', None)
-    verifier = self.request.get('oauth_verifier', None)
-    consumer_key, consumer_secret = self._get_consumer_info_for(provider)
-    
     if not request_token:
-      raise Exception("Couldn't find request token")
-      
+      raise AuthCallbackError("Couldn't find request token in the session",
+        provider=provider)
+
+    verifier = self.request.get('oauth_verifier', None)
     if not verifier:
-      raise Exception("No OAuth verifier was provided")
-      
+      raise AuthCallbackError("No OAuth verifier was provided",
+        provider=provider)
+
+    consumer_key, consumer_secret = self._get_consumer_info_for(provider)
     token = oauth1.Token(request_token['oauth_token'], 
                          request_token['oauth_token_secret'])
     token.set_verifier(verifier)
@@ -315,20 +319,15 @@ class SimpleAuthHandler(object):
     """Initiates OpenID dance using App Engine users module API."""
     identity_url = identity or self.request.get('identity_url', None)
     callback_url = self._callback_uri_for(provider)
-    
-    if identity_url and callback_url:
-      target_url = users.create_login_url(
-        dest_url=callback_url,
-        federated_identity=identity_url
-      )
-      logging.debug('Redirecting user to %s', target_url)
-      self.redirect(target_url)
-      
-    else:
-      logging.error(
-        'Either identity or callback were not specified (%s, %s)',
-        identity_url, callback_url)
-      self._provider_not_supported(provider)
+    if not(identity_url and callback_url):
+      raise AuthInitError(
+        'Either identity URL (%s) or callback (%s) is missing' %
+        (identity_url, callback_url), provider=provider)
+
+    target_url = users.create_login_url(dest_url=callback_url,
+                                        federated_identity=identity_url)
+    logging.debug('Redirecting user to %s', target_url)
+    self.redirect(target_url)
       
   def _openid_callback(self, provider='openid', _identity=None):
     """Being called back by an OpenID provider 
@@ -337,7 +336,8 @@ class SimpleAuthHandler(object):
     user = users.get_current_user()
     
     if not user or not user.federated_identity():
-      raise Exception('OpenID Authentication failed')
+      raise AuthCallbackError('OpenID Authentication failed',
+        provider=provider)
       
     uinfo = {
       'id'      : user.federated_identity(),
