@@ -66,12 +66,12 @@ builtins:
 handlers:
 
 # static content handlers  
-- url: /favicon\.ico
+- url: /(favicon\.ico)
   mime_type: image/png
   static_files: static/\1
   upload: static/favicon\.ico
 
-- url: /robots\.txt
+- url: /(robots\.txt)
   static_files: static/\1
   upload: static/robots\.txt
 
