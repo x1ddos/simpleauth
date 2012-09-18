@@ -131,6 +131,7 @@ http://developers.facebook.com/docs/authentication/permissions/
 
 == Windows Live
 Docs:
+http://msdn.microsoft.com/en-us/library/live/hh243649.aspx
 
 Where to get client/secret:
 https://manage.dev.live.com/AddApplication.aspx
