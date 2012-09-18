@@ -14,7 +14,16 @@
 
 
   <h2>webapp2 auth session</h2>
-  <pre>{{ session }}</pre>
+  <table>
+    <tbody>
+      {% for k, v in session.items() -%}
+        <tr>
+          <td style="padding-right: 5px">{{ k }}:</td>
+          <td>{{ v }}</td>
+        </tr>
+      {% endfor -%}
+    </tbody>
+  </table>
   
   <p style="margin-top: 2em;">
     <a href="/logout" class="btn">logout</a>

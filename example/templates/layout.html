@@ -14,7 +14,16 @@
   <div role="main" class="container" style="margin-bottom: 2em;">
     {% for data, name in flashes %}
       <h2>{{ name }}</h2>
-      <pre>{{ data }}</pre>
+      <table>
+        <tbody>
+          {% for k, v in data.items() -%}
+            <tr>
+              <td style="padding-right: 5px">{{ k }}:</td>
+              <td>{{ v }}</td>
+            </tr>
+          {% endfor -%}
+        </tbody>
+      </table>
     {% endfor %}
 
     {% block main %}{% endblock %}
