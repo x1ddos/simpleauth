@@ -140,9 +140,8 @@ class SimpleAuthHandler(object):
     Calls _<authtype>_init() method, where <authtype> is
     oauth2, oauth1 or openid (defined in PROVIDERS dict).
     
-    If a particular provider is not defined in the PROVIDERS
-    or _<authtype>_init() method does not exist, calls self._auth_error()
-    passing in provider name and an error message.
+    May raise one of the exceptions defined at the beginning
+    of the module. See README for details on error handling.
     """
     cfg = self.PROVIDERS.get(provider, (None,))
     meth = self._auth_method(cfg[0], 'init')
@@ -157,8 +156,8 @@ class SimpleAuthHandler(object):
     Calls _<authtype>_callback() method, where <authtype> is
     oauth2, oauth1 or openid (defined in PROVIDERS dict).
     
-    Falls back to self._auth_error() passing in provider name
-    and an error message.
+    May raise one of the exceptions defined at the beginning
+    of the module. See README for details on error handling.
     """
     cfg = self.PROVIDERS.get(provider, (None,))
     meth = self._auth_method(cfg[0], 'callback')
@@ -209,11 +208,11 @@ class SimpleAuthHandler(object):
     
   def _oauth2_callback(self, provider, access_token_url):
     """Step 2 of OAuth 2.0, whenever the user accepts or denies access."""
-    error = self.request.get('error', None)
+    error = self.request.get('error')
     if error:
       raise AuthProviderResponseError(error, provider)
 
-    code = self.request.get('code', None)
+    code = self.request.get('code')
     callback_url = self._callback_uri_for(provider)
     client_id, client_secret, scope = self._get_consumer_info_for(provider)
 
@@ -284,9 +283,10 @@ class SimpleAuthHandler(object):
     """Third step of OAuth 1.0 dance."""
     request_token = self.session.pop('req_token', None)
     if not request_token:
-      raise InvalidOAuthRequestToken("No request token in user session")
+      raise InvalidOAuthRequestToken(
+        "No request token in user session", provider)
 
-    verifier = self.request.get('oauth_verifier', None)
+    verifier = self.request.get('oauth_verifier')
     if not verifier:
       raise AuthProviderResponseError(
         "No OAuth verifier was provided", provider)
@@ -307,7 +307,7 @@ class SimpleAuthHandler(object):
     
   def _openid_init(self, provider='openid', identity=None):
     """Initiates OpenID dance using App Engine users module API."""
-    identity_url = identity or self.request.get('identity_url', None)
+    identity_url = identity or self.request.get('identity_url')
     callback_url = self._callback_uri_for(provider)
 
     target_url = users.create_login_url(

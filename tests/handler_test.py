@@ -20,11 +20,6 @@ from simpleauth import SimpleAuthHandler
 # test subjects
 #
 
-
-class DummyAuthError(Exception):
-  """Generic auth error for Dummy handler"""
-  pass
-
 class OAuth1ClientMock(object):
   def __init__(self, **kwargs):
     super(OAuth1ClientMock, self).__init__()
