@@ -361,10 +361,21 @@ class SimpleAuthHandler(object):
     return None
     
   def _get_consumer_info_for(self, provider):
-    """Should return a (key, secret, desired_scopes) tuple.
+    """Returns a (key, secret, desired_scopes) tuple.
 
-    Defaults to None.
-    You should redefine this method and return real values.
+    Defaults to None. You should redefine this method and return real values.
+
+    For OAuth 2.0 it should be a 3 elements tuple:
+    (client_ID, client_secret, scopes)
+
+    OAuth 1.0 doesn't have scope so this should return just a
+    (consumer_key, consumer_secret) tuple.
+
+    OpenID needs neither scope nor key/secret, so this method is never called
+    for OpenID authentication.
+
+    See README for more info on scopes and where to get consumer/client
+    key/secrets.
     """
     return (None, None, None)
     

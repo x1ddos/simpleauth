@@ -102,6 +102,43 @@ For instance, SomeBaseRequestHandler could be webapp2.RequestHandler.
    To run the example app, copy example/secrets.py.template into example/secrets.py
    and start the app locally by executing run.sh
 
+OAuth scopes, keys and secrets
+===============================
+
+This section is just a bunch of links to the docs on authentication with
+various providers.
+
+== Google
+Docs:
+https://developers.google.com/accounts/docs/OAuth2WebServer
+
+Where to get client/secret:
+http://code.google.com/apis/console
+
+Multiple scopes should be space-separated, e.g.
+"https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email"
+
+== Facebook
+Docs:
+https://developers.facebook.com/docs/authentication/server-side/
+
+Where to get client/secret:
+https://developers.facebook.com/apps
+
+Multiple Scopes should be comma-separated, e.g. "user_about_me,email".
+Full list of scopes:
+http://developers.facebook.com/docs/authentication/permissions/
+
+== Windows Live
+Docs:
+
+Where to get client/secret:
+https://manage.dev.live.com/AddApplication.aspx
+
+Scopes are space-separated, e.g. "wl.signin wl.basic".
+Full list of scopes:
+http://msdn.microsoft.com/en-us/library/live/hh243646.aspx
+
 CSRF protection
 ================
 
