@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+
+{% block main %}
+  <h2>Error</h2>
+  <p>Error messages are displayed here for the demo purpose.</p>
+
+  <pre>
+    {{ exception.__class__.__name__}}: {{ exception }}
+  </pre>
+{% endblock %}
