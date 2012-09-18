@@ -183,13 +183,10 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
     return secrets.AUTH_CONFIG[provider]
     
   def _to_user_model_attrs(self, data, attrs_map):
+    """Get the needed information from the provider dataset."""
     user_attrs = {}
-    for k, v in data.iteritems():
-      if k in attrs_map:
-        key = attrs_map[k]
-        if isinstance(key, str):
-          user_attrs.setdefault(key, v)
-        else:
-          user_attrs.setdefault(*key(v))
-          
+    for k, v in attrs_map.iteritems():
+      attr = (v, data.get(k)) if isinstance(v, basestring) else v(data.get(k))
+      user_attrs.setdefault(*attr)
+
     return user_attrs
