@@ -255,3 +255,19 @@ and/or _auth_callback() methods, e.g.
          # Do something based on the error: notify users, etc.
          logging.error(e)
          self.redirect('/')
+
+CHANGELOG
+================
+
+v0.1.3 - 2012-09-19
+  * CSRF protection for OAuth 2.0
+    http://code.google.com/p/gae-simpleauth/issues/detail?id=1
+  * Custom exceptions
+    http://code.google.com/p/gae-simpleauth/issues/detail?id=2
+  * Example app improvements, including:
+    - CSRF guard
+    - show exception messages for demo purposes
+    - prettier output of session, profile data and auth_info dictionaries
+    - https://github.com/crhym3/simpleauth/issues/4
+    - https://github.com/crhym3/simpleauth/issues/5
+  * More useful info in README
