@@ -153,9 +153,12 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
         logging.info('Updating currently logged in user')
         
         u = self.current_user
-        u.auth_ids.append(auth_id)
         u.populate(**_attrs)
-        u.put()
+        # The following will also do u.put(). Though, in a real app
+        # you might want to check the result, which is
+        # (boolean, info) tuple where boolean == True indicates success
+        # See webapp2_extras.appengine.auth.models.User for details.
+        u.add_auth_id(auth_id)
         
       else:
         logging.info('Creating a brand new user')
