@@ -13,19 +13,12 @@ except ImportError:
 from webapp2 import WSGIApplication, Route, RequestHandler
 from httplib2 import Response
 
+import simpleauth as sa
 from simpleauth import SimpleAuthHandler
 
 #
 # test subjects
 #
-
-class NotSupportedException(Exception):
-  """Provider not supported"""
-  pass
-
-class DummyAuthError(Exception):
-  """Generic auth error for Dummy handler"""
-  pass
 
 class OAuth1ClientMock(object):
   def __init__(self, **kwargs):
@@ -72,13 +65,6 @@ class DummyAuthHandler(RequestHandler, SimpleAuthHandler):
       'dummy_oauth1': ('cons_key', 'cons_secret'),
       'dummy_oauth2': ('cl_id', 'cl_secret', 'a_scope'),
     }.get(provider, (None, None))
-    
-  def _provider_not_supported(self, provider):
-    raise NotSupportedException(provider)
-
-  def _auth_error(self, provider, msg=None):
-    raise DummyAuthError(
-      "Couldn't authenticate against %s: %s" % (provider, msg))
 
   # Mocks
 
@@ -140,15 +126,15 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
 
   def test_not_supported_provider(self):
     self.expectErrors()
-    with self.assertRaises(NotSupportedException):
+    with self.assertRaises(sa.UnknownAuthMethodError):
       self.handler._simple_auth()
       
-    with self.assertRaises(NotSupportedException):
+    with self.assertRaises(sa.UnknownAuthMethodError):
       self.handler._simple_auth('whatever')
 
     resp = self.app.get_response('/auth/xxx')
     self.assertEqual(resp.status_int, 500)
-    self.assertRegexpMatches(resp.body, 'NotSupportedException: xxx')
+    self.assertRegexpMatches(resp.body, 'UnknownAuthMethodError')
 
   def test_openid_init(self):
     resp = self.app.get_response('/auth/openid?identity_url=some.oid.provider.com')
@@ -179,7 +165,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     self.expectErrors()
     resp = self.app.get_response('/auth/openid/callback')
     self.assertEqual(resp.status_int, 500)
-    self.assertRegexpMatches(resp.body, 'DummyAuthError')
+    self.assertRegexpMatches(resp.body, 'InvalidOpenIDUserError')
 
   def test_oauth1_init(self):
     resp = self.app.get_response('/auth/dummy_oauth1')
@@ -268,7 +254,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
       'code=auth-code&state=%s' % token)
 
     self.assertEqual(resp.status_int, 500)
-    self.assertRegexpMatches(resp.body, 'State parameter is not valid')
+    self.assertRegexpMatches(resp.body, 'InvalidCSRFTokenError')
 
   def test_csrf_oauth2_tokens_dont_match(self):
     self.expectErrors()
@@ -285,7 +271,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
       'code=auth-code&state=%s' % token2)
 
     self.assertEqual(resp.status_int, 500)
-    self.assertRegexpMatches(resp.body, 'State parameter is not valid')
+    self.assertRegexpMatches(resp.body, 'InvalidCSRFTokenError')
 
   def test_csrf_token_generation(self):
     h = SimpleAuthHandler()

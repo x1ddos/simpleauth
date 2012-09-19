@@ -97,7 +97,7 @@ For instance, SomeBaseRequestHandler could be webapp2.RequestHandler.
      Route('/logout',
        handler='handlers.AuthHandler:logout', name='logout')
    ]
-   
+
 6. That's it. See a sample app in the example dir. 
    To run the example app, copy example/secrets.py.template into example/secrets.py
    and start the app locally by executing run.sh
@@ -193,3 +193,65 @@ of the problems.
 Alternative implementation could involve HMAC digest. If anything serious 
 pops up (e.g. see this SO question: http://goo.gl/3hiOv) please submit 
 a bug on the issue tracker.
+
+Catching errors
+================
+
+There are a couple ways to catch authentication errors if you don't want your
+app to display a "Server Error" message when something goes wrong during
+an auth flow.
+
+You can use webapp2's built-in functionality and define
+handle_exception(self, exception, debug) instance method on the handler
+that processes authentication requests or on a base handler if you have one.
+Here's a simple example:
+
+   class AuthHandler(webapp2.RequestHandler, SimpleAuthHandler):
+     # _on_signin() and other stuff
+     # ...
+
+     def handle_exception(self, exception, debug):
+       # Log the error
+       logging.error(exception)
+       # Do something based on the exception: notify users, etc.
+       self.response.write(exception)
+       self.response.set_status(500)
+
+You can also define global (app-wise) error handlers using app.error_handlers
+dict (where app is a webapp2.WSGIApplication instance). It's all described
+in details on this page:
+http://webapp-improved.appspot.com/guide/exceptions.html
+
+Another solution is, if you're using webapp2's dispatch method like in the
+CSRF snippet above, you could do something like this:
+
+   from simpleauth import Error as AuthError
+
+   def dispatch(self):
+     try:
+       # Dispatch the request.
+       webapp2.RequestHandler.dispatch(self)
+     except AuthError as e:
+       # Do something based on the error: notify users, etc.
+       logging.error(e)
+       self.redirect('/')
+
+Alternatively, you can also use App Engine built-in functionality and define
+error handlers in app.yaml. Docs on this can be found here:
+https://developers.google.com/appengine/docs/python/config/appconfig
+(see Custom Error Responses section).
+
+Lastly, if nothing from the above works for you, override _simple_auth()
+and/or _auth_callback() methods, e.g.
+
+   from simpleauth import SimpleAuthHandler
+   from simpleauth import Error as AuthError
+
+   class AuthHandler(webapp2.RequestHandler, SimpleAuthHandler):
+     def _simple_auth(self, provider=None):
+       try:
+         super(AuthHandler, self)._simple_auth(provider)
+       except AuthError as e:
+         # Do something based on the error: notify users, etc.
+         logging.error(e)
+         self.redirect('/')
