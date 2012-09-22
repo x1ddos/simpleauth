@@ -84,7 +84,7 @@ class SimpleAuthHandler(object):
   https://developer.linkedin.com/documents/linkedins-oauth-details
   
   Windows Live.
-  http://msdn.microsoft.com/en-us/library/hh243648.aspx#user
+  http://msdn.microsoft.com/en-us/library/live/hh243647.aspx
   
   Twtitter.
   https://dev.twitter.com/docs/auth/oauth
@@ -95,8 +95,8 @@ class SimpleAuthHandler(object):
       'https://accounts.google.com/o/oauth2/auth?{0}', 
       'https://accounts.google.com/o/oauth2/token'),
     'windows_live': ('oauth2',
-      'https://oauth.live.com/authorize?{0}',
-      'https://oauth.live.com/token'),
+      'https://login.live.com/oauth20_authorize.srf?{0}',
+      'https://login.live.com/oauth20_token.srf'),
     'facebook'    : ('oauth2',
       'https://www.facebook.com/dialog/oauth?{0}',
       'https://graph.facebook.com/oauth/access_token'),
