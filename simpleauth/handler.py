@@ -72,22 +72,7 @@ class SimpleAuthHandler(object):
   e.g. webapp2.RequestHandler. See README for getting started and 
   a usage example, or look through the code. It really is simple.
 
-  Docs on authentication flow of various providers:
-
-  Google auth
-  http://code.google.com/apis/accounts/docs/OAuth2WebServer.html
-  
-  Facbook auth
-  http://developers.facebook.com/docs/authentication/
-  
-  LinkedIn auth.
-  https://developer.linkedin.com/documents/linkedins-oauth-details
-  
-  Windows Live.
-  http://msdn.microsoft.com/en-us/library/live/hh243647.aspx
-  
-  Twtitter.
-  https://dev.twitter.com/docs/auth/oauth
+  See README for docs on authentication flows.
   """
   
   PROVIDERS = {

@@ -140,12 +140,11 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
     if user:
       logging.info('Found existing user to log in')
       # Existing users might've changed their profile data so we update our
-      # local model anyway. This might result in quiet inefficient usage
+      # local model anyway. This might result in quite inefficient usage
       # of the Datastore, but we do this anyway for demo purposes.
       #
       # In a real app you could compare _attrs with user's properties fetched
-      # from the datastore and update only those that have been changed
-      # (if any).
+      # from the datastore and update local user in case something's changed.
       user.populate(**_attrs)
       user.put()
       self.auth.set_session(
@@ -200,7 +199,7 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
     """Get the needed information from the provider dataset."""
     user_attrs = {}
     for k, v in attrs_map.iteritems():
-      attr = (v, data.get(k)) if isinstance(v, basestring) else v(data.get(k))
+      attr = (v, data.get(k)) if isinstance(v, str) else v(data.get(k))
       user_attrs.setdefault(*attr)
 
     return user_attrs
