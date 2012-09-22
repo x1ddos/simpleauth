@@ -135,19 +135,26 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
     logging.info('Looking for a user with id %s', auth_id)
     
     user = self.auth.store.user_model.get_by_auth_id(auth_id)
+    _attrs = self._to_user_model_attrs(data, self.USER_ATTRS[provider])
+
     if user:
       logging.info('Found existing user to log in')
-      # existing user. just log them in.
+      # Existing users might've changed their profile data so we update our
+      # local model anyway. This might result in quiet inefficient usage
+      # of the Datastore, but we do this anyway for demo purposes.
+      #
+      # In a real app you could compare _attrs with user's properties fetched
+      # from the datastore and update only those that have been changed
+      # (if any).
+      user.populate(**_attrs)
+      user.put()
       self.auth.set_session(
-        self.auth.store.user_to_dict(user)
-      )
+        self.auth.store.user_to_dict(user))
       
     else:
       # check whether there's a user currently logged in
       # then, create a new user if nobody's signed in, 
       # otherwise add this auth_id to currently logged in user.
-      
-      _attrs = self._to_user_model_attrs(data, self.USER_ATTRS[provider])
 
       if self.logged_in:
         logging.info('Updating currently logged in user')
