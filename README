@@ -19,6 +19,14 @@ Dependencies:
   - httplib2 (as a dependency of python-oauth2)
   - lxml (e.g. LinkedIn user profile data parsing)
 
+Demo (example app): https://simpleauth.appspot.com
+Source code + issues: http://code.google.com/p/gae-simpleauth/
+GitHub mirror (+ more issues): https://github.com/crhym3/simpleauth
+
+Discussions:
+https://groups.google.com/d/forum/gae-simpleauth
+
+
 Getting Started
 ================
 
