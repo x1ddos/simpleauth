@@ -21,10 +21,6 @@ except ImportError:
     from django.utils import simplejson as json
     # at this point ImportError will be raised 
     # if none of the above could be imported
-    
-# already in the App Engine libs, see app.yaml on how to specify libraries
-# need this for providers like LinkedIn
-from lxml import etree
 
 # it's a OAuth 1.0 spec even though the lib is called oauth2
 import oauth2 as oauth1
@@ -396,6 +392,15 @@ class SimpleAuthHandler(object):
     where <fields> is something like
     (id,first-name,last-name,picture-url,public-profile-url,headline)
     """
+    try:
+        # already in the App Engine libs, see app.yaml on how to specify
+        # libraries need this for providers like LinkedIn
+        from lxml import etree
+    except ImportError:
+        logging.error('requirement `lxml.etree` was not provided. please '
+                      'make sure you have enabled it in app.yaml')
+        raise
+
     token = oauth1.Token(key=auth_info['oauth_token'], 
                          secret=auth_info['oauth_token_secret'])
     client = self._oauth1_client(token, key, secret)

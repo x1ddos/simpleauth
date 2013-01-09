@@ -5,7 +5,7 @@ from distutils.core import setup
 
 from dev_appserver import fix_sys_path
 
-saved_path = [p for p in sys.path]
+saved_path = list(sys.path)
 fix_sys_path() # wipes out sys.path
 sys.path.extend(saved_path) # put back our original paths
 
@@ -23,9 +23,12 @@ setup(name='simpleauth',
       description='A simple auth handler for Google App Engine supporting '
                   'OAuth 1.0a, 2.0 and OpenID',
       keywords='oauth oauth2 openid appengine google',
-      platforms = ["any"],
+      platforms=["any"],
       license='MIT',
-      requires=['lxml', 'oauth2', 'httplib2'],
+      requires=['oauth2', 'httplib2'],
+      extras_require={
+        'LinkedIn': ['lxml']
+      },
       classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
