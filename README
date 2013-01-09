@@ -311,6 +311,12 @@ Terence Honles - https://plus.google.com/102290028010684171454
 
 CHANGELOG
 ================
+v0.1.4 - 2013-01-09
+  * lxml lib requirement is now optional
+    http://code.google.com/p/gae-simpleauth/issues/detail?id=3
+  * Updated Windows Live OAuth 2.0 endpoints
+  * A little more doc in this readme and code comments
+
 v0.1.3 - 2012-09-19
   * CSRF protection for OAuth 2.0
     http://code.google.com/p/gae-simpleauth/issues/detail?id=1
