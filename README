@@ -18,7 +18,6 @@ Supported providers out of the box:
 Dependencies:
   - python-oauth2. This is actually a library implementing OAuth 1.0 spec.
   - httplib2 (as a dependency of python-oauth2)
-  - lxml (e.g. LinkedIn user profile data parsing)
 
 Demo (example app): https://simpleauth.appspot.com
 Source code + issues: http://code.google.com/p/gae-simpleauth/
