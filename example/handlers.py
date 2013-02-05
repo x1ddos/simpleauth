@@ -119,6 +119,13 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
       'first-name'        : 'name',
       'public-profile-url': 'link'
     },
+    'foursquare'   : {
+      'photo'    : lambda photo: ('avatar_url', photo.get('prefix') + '100x100' + photo.get('suffix')),
+      'firstName': 'firstName',
+      'lastName' : 'lastName',
+      'contact'  : lambda contact: ('email',contact.get('email')),
+      'id'       : lambda id: ('link', 'http://foursquare.com/user/{0}'.format(id))
+    },
     'openid'   : {
       'id'      : lambda id: ('avatar_url', '/img/missing-avatar.png'),
       'nickname': 'name',

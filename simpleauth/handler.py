@@ -89,6 +89,9 @@ class SimpleAuthHandler(object):
        'request': 'https://api.twitter.com/oauth/request_token', 
        'auth'   : 'https://api.twitter.com/oauth/authenticate?{0}'
     },            'https://api.twitter.com/oauth/access_token'),
+    'foursquare': ('oauth2',
+       'https://foursquare.com/oauth2/authenticate?{0}',
+       'https://foursquare.com/oauth2/access_token'),
     'openid'      : ('openid', None)
   }
   
@@ -96,6 +99,7 @@ class SimpleAuthHandler(object):
   TOKEN_RESPONSE_PARSERS = {
     'google'      : '_json_parser',
     'windows_live': '_json_parser',
+    'foursquare'  : '_json_parser',
     'facebook'    : '_query_string_parser',
     'linkedin'    : '_query_string_parser',
     'twitter'     : '_query_string_parser'
@@ -382,6 +386,20 @@ class SimpleAuthHandler(object):
                                 auth_info['access_token'])
     return json.loads(resp)
     
+  def _get_foursquare_user_info(self, auth_info, key=None, secret=None):
+    """Returns a dict of currenly logging in user.
+    foursquare API endpoint:
+    https://api.foursquare.com/v2/users/self
+    """
+    resp = self._oauth2_request(
+      'https://api.foursquare.com/v2/users/self?{0}&v=20130204',
+      auth_info['access_token'],'oauth_token'
+    )
+    data = json.loads(resp)
+    if data['meta']['code'] != 200:
+      logging.error(data['meta']['errorDetail'])
+    return data['response'].get('user')
+
   def _get_linkedin_user_info(self, auth_info, key=None, secret=None):
     """Returns a dict of currently logging in linkedin user.
 
@@ -444,11 +462,11 @@ class SimpleAuthHandler(object):
     
     return oauth1.Client(*args)
   
-  def _oauth2_request(self, url, token):
+  def _oauth2_request(self, url, token, token_param='access_token'):
     """Makes an HTTP request with OAuth 2.0 access token using App Engine 
     URLfetch API.
     """
-    target_url = url.format(urlencode({'access_token':token}))
+    target_url = url.format(urlencode({token_param:token}))
     return urlfetch.fetch(target_url).content
     
   def _query_string_parser(self, body):

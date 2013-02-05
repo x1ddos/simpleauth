@@ -10,6 +10,7 @@ Supported providers out of the box:
   - Google (OAuth 2.0)
   - Facebook (OAuth 2.0)
   - Windows Live (OAuth 2.0)
+  - foursquare (OAuth 2.0)
   - Twitter (OAuth 1.0a)
   - LinkedIn (OAuth 1.0a)
   - OpenID, using App Engine users module API
@@ -307,6 +308,7 @@ CONTRIBUTORS
 ================
 Eric Higgins - https://plus.google.com/110096465686977826318
 Terence Honles - https://plus.google.com/102290028010684171454
+ArenaSource - https://github.com/ArenaSource
 
 
 CHANGELOG
