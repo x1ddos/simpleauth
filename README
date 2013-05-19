@@ -12,7 +12,8 @@ Supported providers out of the box:
   - Windows Live (OAuth 2.0)
   - foursquare (OAuth 2.0)
   - Twitter (OAuth 1.0a)
-  - LinkedIn (OAuth 1.0a)
+  - LinkedIn (OAuth 1.0a, deprecated)
+  - LinkedIn (OAuth 2.0)
   - OpenID, using App Engine users module API
 
 Dependencies:
