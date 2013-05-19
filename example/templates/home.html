@@ -8,12 +8,18 @@
     <a href="/logout" class="btn">logout</a>
   {% else %}
     <p>Try logging in with one of these:</p>
-    <a href="/auth/google" class="btn">Google</a>
-    <a href="/auth/facebook" class="btn">Facebook</a>
-    <a href="/auth/openid?identity_url=me.yahoo.com" class="btn">Yahoo! (OpenID)</a>
-    <a href="/auth/twitter" class="btn">Twitter</a>
-    <a href="/auth/linkedin" class="btn">LinkedIn</a>
-    <a href="/auth/windows_live" class="btn">Windows Live</a>
-    <a href="/auth/foursquare" class="btn">foursquare</a>
+    <p>
+      <a href="/auth/google" class="btn">Google</a>
+      <a href="/auth/facebook" class="btn">Facebook</a>
+      <a href="/auth/twitter" class="btn">Twitter</a>
+      <a href="/auth/openid?identity_url=me.yahoo.com"
+         class="btn">Yahoo! (OpenID)</a>
+    </p>
+    <p>
+      <a href="/auth/linkedin" class="btn">LinkedIn (deprecated)</a>
+      <a href="/auth/linkedin2" class="btn">LinkedIn OAuth 2.0</a>
+      <a href="/auth/windows_live" class="btn">Windows Live</a>
+      <a href="/auth/foursquare" class="btn">foursquare</a>
+    </p>
   {% endif %}
 {% endblock %}

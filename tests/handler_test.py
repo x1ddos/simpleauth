@@ -113,14 +113,15 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     self.app = WSGIApplication(routes, debug=True)
     
   def test_providers_dict(self):
-    for p in ('google', 'twitter', 'linkedin', 'openid', 
+    for p in ('google', 'twitter', 'linkedin', 'linkedin2', 'openid', 
               'facebook', 'windows_live'):
       self.assertIn(self.handler.PROVIDERS[p][0], 
                    ['oauth2', 'oauth1', 'openid'])
     
   def test_token_parsers_dict(self):
-    for p in ('google', 'windows_live', 'facebook', 'linkedin', 'twitter'):
-      parser = self.handler.TOKEN_RESPONSE_PARSERS['google']
+    for p in ('google', 'windows_live', 'facebook', 'linkedin', 'linkedin2',
+              'twitter'):
+      parser = self.handler.TOKEN_RESPONSE_PARSERS[p]
       self.assertIsNotNone(parser)
       self.assertTrue(hasattr(self.handler, parser))
 

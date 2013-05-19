@@ -158,7 +158,7 @@ registration. If you need to test your app on say, localhost and example.org,
 you should probably register two different applications and use the appropriate
 set of key/secret: one for localhost, and the other for example.org.
 
-== LinkedIn
+== LinkedIn OAuth 1.0a (deprecated)
 Docs: https://developer.linkedin.com/documents/authentication
 Get client/secret: https://www.linkedin.com/secure/developer
 
@@ -169,6 +169,15 @@ it'll always use the value set in app's settings page. So, if you have two
 versions, say one on localhost and another on example.org, you'll probably
 want to register two applications (e.g. "dev" and "production") and use 
 appropriate set of key/secret accordingly.
+
+== LinkedIn OAuth 2.0
+Docs: https://developer.linkedin.com/documents/authentication
+Get client/secret: https://www.linkedin.com/secure/developer
+
+Scopes are space-separated, e.g. "r_fullprofile r_emailaddress r_network".
+See Member Permissions section for more details:
+https://developer.linkedin.com/documents/authentication#granting
+
 
 == Twitter
 Docs: https://dev.twitter.com/docs/auth/implementing-sign-twitter

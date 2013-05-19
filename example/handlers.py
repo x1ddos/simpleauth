@@ -119,6 +119,11 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
       'first-name'        : 'name',
       'public-profile-url': 'link'
     },
+    'linkedin2' : {
+      'picture-url'       : 'avatar_url',
+      'first-name'        : 'name',
+      'public-profile-url': 'link'
+    },
     'foursquare'   : {
       'photo'    : lambda photo: ('avatar_url', photo.get('prefix') + '100x100' + photo.get('suffix')),
       'firstName': 'firstName',
