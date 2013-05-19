@@ -196,6 +196,18 @@ versions, say one on localhost and another on example.org, you'll probably
 want to register two applications (e.g. "dev" and "production") and use 
 appropriate set of key/secret accordingly.
 
+
+== OpenID
+For OpenID to work you'll need to set AuthenticationType to FederatedLogin
+in App Engines application settings.
+
+Beware of this issue if you enable FederatedLogin:
+https://code.google.com/p/googleappengine/issues/detail?id=3258
+
+More on App Engine application settings:
+https://developers.google.com/appengine/docs/adminconsole/applicationsettings
+
+
 CSRF protection
 ================
 
