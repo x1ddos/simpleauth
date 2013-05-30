@@ -451,9 +451,7 @@ class SimpleAuthHandler(object):
       # libraries need this for providers like LinkedIn
       from lxml import etree
     except ImportError:
-      logging.error('requirement `lxml.etree` was not provided. please '
-                    'make sure you have enabled it in app.yaml')
-      raise
+      import xml.etree.ElementTree as etree
     person = etree.fromstring(content)
     uinfo = {}
     for e in person:
