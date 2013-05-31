@@ -447,13 +447,11 @@ class SimpleAuthHandler(object):
 
   def _parse_xml_user_info(self, content):
     try:
-      # already in the App Engine libs, see app.yaml on how to specify
-      # libraries need this for providers like LinkedIn
+      # lxml is one of the third party libs available on App Engine out of the
+      # box. See example/app.yaml for more info.
       from lxml import etree
     except ImportError:
-      logging.error('requirement `lxml.etree` was not provided. please '
-                    'make sure you have enabled it in app.yaml')
-      raise
+      import xml.etree.ElementTree as etree
     person = etree.fromstring(content)
     uinfo = {}
     for e in person:
