@@ -360,10 +360,10 @@ class SimpleAuthHandler(object):
   def _get_google_user_info(self, auth_info, key=None, secret=None):
     """Returns a dict of currenly logging in user.
     Google API endpoint:
-    https://www.googleapis.com/oauth2/v1/userinfo
+    https://www.googleapis.com/oauth2/v3/userinfo
     """
     resp = self._oauth2_request(
-      'https://www.googleapis.com/oauth2/v1/userinfo?{0}', 
+      'https://www.googleapis.com/oauth2/v3/userinfo?{0}', 
       auth_info['access_token']
     )
     return json.loads(resp)
