@@ -366,7 +366,10 @@ class SimpleAuthHandler(object):
       'https://www.googleapis.com/oauth2/v3/userinfo?{0}', 
       auth_info['access_token']
     )
-    return json.loads(resp)
+    data = json.loads(resp)
+    if 'id' not in data and 'sub' in data:
+      data['id'] = data['sub']
+    return data
     
   def _get_windows_live_user_info(self, auth_info, key=None, secret=None):
     """Windows Live API user profile endpoint.

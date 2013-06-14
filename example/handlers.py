@@ -102,7 +102,7 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
     'google'   : {
       'picture': 'avatar_url',
       'name'   : 'name',
-      'link'   : 'link'
+      'profile': 'link'
     },
     'windows_live': {
       'avatar_url': 'avatar_url',
