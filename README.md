@@ -1,4 +1,7 @@
-# Simple authentication wrapper for an Google App Engine app
+[![Build Status](https://drone.io/github.com/crhym3/simpleauth/status.png)](https://drone.io/github.com/crhym3/simpleauth/latest)
+
+This python module provides a simple authentication wrapper for a
+[Google App Engine][13] app.
 
 Supported specs:
 
@@ -390,3 +393,4 @@ If you want to be mentioned here please do send me an email!
 [10]: https://codereview.appspot.com/
 [11]: https://github.com/crhym3/simpleauth/commits/master
 [12]: https://code.google.com/p/googleappengine/issues/detail?id=3258
+[13]: https://cloud.google.com/products/
