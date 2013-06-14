@@ -39,5 +39,5 @@ setup(name='simpleauth',
         'Topic :: Software Development :: Libraries',    
       ],
       packages=['simpleauth'],
-      long_description=read('README')
+      long_description=read('README.md')
 )
