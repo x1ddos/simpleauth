@@ -460,14 +460,14 @@ class SimpleAuthHandler(object):
     
   def _get_twitter_user_info(self, auth_info, key=None, secret=None):
     """Returns a dict of twitter user using
-    https://api.twitter.com/1/account/verify_credentials.json
+    https://api.twitter.com/1.1/account/verify_credentials.json
     """
     token = oauth1.Token(key=auth_info['oauth_token'],
                          secret=auth_info['oauth_token_secret'])
     client = self._oauth1_client(token, key, secret)
     
     resp, content = client.request(
-      'https://api.twitter.com/1/account/verify_credentials.json'
+      'https://api.twitter.com/1.1/account/verify_credentials.json'
     )
     uinfo = json.loads(content)
     uinfo.setdefault('link', 'http://twitter.com/%s' % uinfo['screen_name'])
