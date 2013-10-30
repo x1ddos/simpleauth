@@ -71,7 +71,7 @@ class BaseRequestHandler(webapp2.RequestHandler):
     
 class RootHandler(BaseRequestHandler):
   def get(self):
-    """Handles default langing page"""
+    """Handles default landing page"""
     self.render('home.html')
     
 class ProfileHandler(BaseRequestHandler):
