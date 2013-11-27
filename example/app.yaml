@@ -3,7 +3,7 @@
 
 # Replace 'your-app-id-goes-here' with your application ID.
 # Get it here if you don't have one: https://appengine.google.com/
-application: simpleauth
+application: simpleauth-extra
 
 # App version
 version: use-version-arg
