@@ -2,6 +2,7 @@
 import os
 import sys
 import logging
+import json
 
 from urllib import urlencode
 import urlparse
@@ -185,10 +186,14 @@ class SimpleAuthHandler(object):
     if scope:
       params.update(scope=scope)
 
+    state_params = {}
+    
     if self.OAUTH2_CSRF_STATE:
-      state = self._generate_csrf_token()
-      params.update(state=state)
-      self.session[self.OAUTH2_CSRF_SESSION_PARAM] = state
+      csrf_token = self._generate_csrf_token()
+      state_params['OAUTH2_CSRF_STATE'] = csrf_token
+      self.session[self.OAUTH2_CSRF_SESSION_PARAM] = csrf_token
+    if len(state_params):
+      params.update(state=json.dumps(state_params))
 
     target_url = auth_url.format(urlencode(params)) 
     logging.debug('Redirecting user to %s', target_url)
@@ -205,9 +210,13 @@ class SimpleAuthHandler(object):
     callback_url = self._callback_uri_for(provider)
     client_id, client_secret, scope = self._get_consumer_info_for(provider)
 
+    json_state = self.request.get('state')
+    logging.info(json_state)
+    state = json.loads(json_state)
+    
     if self.OAUTH2_CSRF_STATE:
       _expected = self.session.pop(self.OAUTH2_CSRF_SESSION_PARAM, '')
-      _actual = self.request.get('state')
+      _actual = state['OAUTH2_CSRF_STATE']
       # If _expected is '' it won't validate anyway.
       if not self._validate_csrf_token(_expected, _actual):
         raise InvalidCSRFTokenError(
