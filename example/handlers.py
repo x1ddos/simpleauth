@@ -3,6 +3,8 @@ import logging
 import secrets
 
 import webapp2
+import webob.multidict
+
 from webapp2_extras import auth, sessions, jinja2
 from jinja2.runtime import TemplateNotFound
 
@@ -138,7 +140,7 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
     }
   }
   
-  def _on_signin(self, data, auth_info, provider):
+  def _on_signin(self, data, auth_info, provider, extra_state_params):
     """Callback whenever a new or existing user is logging in.
      data is a user info dictionary.
      auth_info contains access token or oauth token and secret.
@@ -188,9 +190,15 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
     # normally do this.
     self.session.add_flash(data, 'data - from _on_signin(...)')
     self.session.add_flash(auth_info, 'auth_info - from _on_signin(...)')
-
-    # Go to the profile page
-    self.redirect('/profile')
+    self.session.add_flash({'extra_state_params': extra_state_params}, 'extra_state_params - from _on_signin(...)')
+    
+    if extra_state_params is not None:
+      md=webob.multidict.MultiDict(extra_state_params)
+      destination_url = md.get('destination_url', '/profile')
+      self.redirect(str(destination_url))
+    else:
+      # Go to the profile page
+      self.redirect('/profile')
 
   def logout(self):
     self.auth.unset_session()

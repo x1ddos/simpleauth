@@ -153,9 +153,9 @@ class SimpleAuthHandler(object):
     cfg = self.PROVIDERS.get(provider, (None,))
     meth = self._auth_method(cfg[0], 'callback')
     # Get user profile data and their access token
-    user_data, auth_info = meth(provider, *cfg[-1:])
+    user_data, auth_info, extra_state_params = meth(provider, *cfg[-1:])
     # The rest should be implemented by the actual app
-    self._on_signin(user_data, auth_info, provider)
+    self._on_signin(user_data, auth_info, provider, extra_state_params)
 
   def _auth_method(self, auth_type, step):
     """Constructs proper method name and returns a callable.
@@ -226,6 +226,8 @@ class SimpleAuthHandler(object):
         raise InvalidCSRFTokenError(
           '[%s] vs [%s]' % (_expected, _actual), provider)
       
+    extra_state_params=state.get('extra_state_params', None)
+    
     payload = {
       'code': code,
       'client_id': client_id,
@@ -246,7 +248,7 @@ class SimpleAuthHandler(object):
 
     auth_info = _parser(resp.content)
     user_data = _fetcher(auth_info, key=client_id, secret=client_secret)
-    return (user_data, auth_info)
+    return (user_data, auth_info, extra_state_params)
     
   def _oauth1_init(self, provider, auth_urls):
     """Initiates OAuth 1.0 dance"""
