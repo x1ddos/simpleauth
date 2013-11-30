@@ -1,6 +1,6 @@
 FLAGS   =
 GAE_SDK = /usr/local/google_appengine
-PYTHON  = PYTHONPATH=.:$(GAE_SDK) python
+PYTHON  = PYTHONPATH=.:../example/lib:$(GAE_SDK) python
 
 default: test
 
