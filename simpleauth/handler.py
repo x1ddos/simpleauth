@@ -363,7 +363,7 @@ class SimpleAuthHandler(object):
     https://www.googleapis.com/oauth2/v3/userinfo
     """
     resp = self._oauth2_request(
-      'https://www.googleapis.com/oauth2/v3/userinfo?{0}',
+        'https://www.googleapis.com/plus/v1/people/me?{0}',
       auth_info['access_token']
     )
     data = json.loads(resp)
