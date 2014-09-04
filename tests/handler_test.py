@@ -4,6 +4,7 @@ from tests import TestMixin
 
 import time
 import base64
+from collections import OrderedDict
 from urllib import urlencode
 
 try:
@@ -209,13 +210,15 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
 
         self.assertEqual(resp.status_int, 302)
 
-        state = json.dumps({'OAUTH2_CSRF_STATE' : 'valid-csrf-token'})
+        state = json.dumps({'OAUTH2_CSRF_STATE' : 'valid-csrf-token', 'extra_state_params': []})
+        params = OrderedDict()
+        params['scope'] = 'a_scope'
+        params['state'] = state
+        params['redirect_uri'] = '/auth/dummy_oauth2/callback'
+        params['response_type'] = 'code'
+        params['client_id'] = 'cl_id'
 
-        query = urlencode({'scope': 'a_scope',
-                           'state': state,
-                           'redirect_uri': '/auth/dummy_oauth2/callback',
-                           'response_type': 'code',
-                           'client_id': 'cl_id'})
+        query = urlencode(params)
 
         self.assertEqual(resp.headers['Location'], 'https://dummy/oauth2?' + query)
 

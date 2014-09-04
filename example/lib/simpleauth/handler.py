@@ -133,11 +133,15 @@ class SimpleAuthHandler(object):
     May raise one of the exceptions defined at the beginning
     of the module. See README for details on error handling.
     """
+    extra_state_params = None
+    if self.request is not None and self.request.params is not None:
+        extra_state_params = self.request.params.items()
+
     cfg = self.PROVIDERS.get(provider, (None,))
     meth = self._auth_method(cfg[0], 'init')
     # We don't respond directly in here. Specific methods are in charge
     # with redirecting user to an auth endpoint
-    meth(provider, cfg[1])
+    meth(provider, cfg[1], extra_state_params)
       
   def _auth_callback(self, provider=None):
     """Dispatcher of callbacks from auth providers, e.g.
@@ -172,7 +176,7 @@ class SimpleAuthHandler(object):
     except AttributeError:
       raise UnknownAuthMethodError(method)
 
-  def _oauth2_init(self, provider, auth_url):
+  def _oauth2_init(self, provider, auth_url, extra_state_params=None):
     """Initiates OAuth 2.0 web flow"""
     key, secret, scope = self._get_consumer_info_for(provider)
     callback_url = self._callback_uri_for(provider)
@@ -192,6 +196,9 @@ class SimpleAuthHandler(object):
       csrf_token = self._generate_csrf_token()
       state_params['OAUTH2_CSRF_STATE'] = csrf_token
       self.session[self.OAUTH2_CSRF_SESSION_PARAM] = csrf_token
+    if extra_state_params is not None:
+        state_params['extra_state_params'] = extra_state_params
+    
     if len(state_params):
       params.update(state=json.dumps(state_params))
 
@@ -243,8 +250,8 @@ class SimpleAuthHandler(object):
     auth_info = _parser(resp.content)
     user_data = _fetcher(auth_info, key=client_id, secret=client_secret)
     return (user_data, auth_info)
-    
-  def _oauth1_init(self, provider, auth_urls):
+
+  def _oauth1_init(self, provider, auth_urls, extra_state_params=None):
     """Initiates OAuth 1.0 dance"""
     key, secret = self._get_consumer_info_for(provider)
     callback_url = self._callback_uri_for(provider)
@@ -302,8 +309,8 @@ class SimpleAuthHandler(object):
     auth_info = _parser(content)
     user_data = _fetcher(auth_info, key=consumer_key, secret=consumer_secret)
     return (user_data, auth_info)
-    
-  def _openid_init(self, provider='openid', identity=None):
+
+  def _openid_init(self, provider='openid', identity=None, extra_state_params=None):
     """Initiates OpenID dance using App Engine users module API."""
     identity_url = identity or self.request.get('identity_url')
     callback_url = self._callback_uri_for(provider)
