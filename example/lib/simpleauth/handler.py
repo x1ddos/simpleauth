@@ -235,7 +235,7 @@ class SimpleAuthHandler(object):
         raise InvalidCSRFTokenError(
           '[%s] vs [%s]' % (_expected, _actual), provider)
       
-    extra_state_params=state.get('extra_state_params', None)
+    extra_state_params = state.get('extra_state_params', None)
     
     payload = {
       'code': code,
