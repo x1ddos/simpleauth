@@ -56,7 +56,7 @@ class DummyAuthHandler(RequestHandler, SimpleAuthHandler):
         RequestHandler.dispatch(self)
         self.response.headers['SessionMock'] = json.dumps(self.session)
 
-    def _on_signin(self, user_data, auth_info, provider):
+    def _on_signin(self, user_data, auth_info, provider, extra_state_params):
         self.redirect('/logged_in?provider=%s' % provider)
 
     def _callback_uri_for(self, provider):
