@@ -43,8 +43,6 @@ libraries:
   version: "2.6"
 - name: lxml
   version: '2.3'
-- name: webob
-  version: latest
 
 # The Python SDK includes a number of builtin handlers 
 # for common application functions.
