@@ -1,4 +1,4 @@
-[![Build Status](https://drone.io/github.com/okigan/simpleauth/status.png)](https://drone.io/github.com/okigan/simpleauth/latest)
+[![Build Status](https://drone.io/github.com/crhym3/simpleauth/status.png)](https://drone.io/github.com/crhym3/simpleauth/latest)
 
 This python module provides a simple authentication wrapper for a
 [Google App Engine][13] app.
