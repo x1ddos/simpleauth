@@ -11,7 +11,8 @@ Supported specs:
 
 Supported providers out of the box:
 
-  - Google (OAuth 2.0)
+  - Google (OAuth 2.0, [deprecated][14])
+  - Google+ (OAuth 2.0)
   - Facebook (OAuth 2.0)
   - Windows Live (OAuth 2.0)
   - foursquare (OAuth 2.0)
@@ -132,10 +133,9 @@ various providers.
 ### Google
 
   - Docs: https://developers.google.com/accounts/docs/OAuth2WebServer
-  - Get client/secret: http://code.google.com/apis/console
+  - Get client/secret: https://console.developers.google.com
 
-Multiple scopes should be space-separated, e.g.
-`https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email`
+Multiple scopes should be space-separated, e.g. `profile email`.
 
 Multiple callback URLs on different domains are awesomely supported.
 If you're running two versions of the app, say one on `localhost` and another
@@ -395,3 +395,4 @@ If you want to be mentioned here please do send me an email!
 [11]: https://github.com/crhym3/simpleauth/commits/master
 [12]: https://code.google.com/p/googleappengine/issues/detail?id=3258
 [13]: https://cloud.google.com/products/
+[14]: https://developers.google.com/+/api/auth-migration#timetable

@@ -76,6 +76,9 @@ class SimpleAuthHandler(object):
     'google'      : ('oauth2', 
       'https://accounts.google.com/o/oauth2/auth?{0}', 
       'https://accounts.google.com/o/oauth2/token'),
+    'googleplus'  : ('oauth2',
+      'https://accounts.google.com/o/oauth2/auth?{0}',
+      'https://accounts.google.com/o/oauth2/token'),
     'windows_live': ('oauth2',
       'https://login.live.com/oauth20_authorize.srf?{0}',
       'https://login.live.com/oauth20_token.srf'),
@@ -102,6 +105,7 @@ class SimpleAuthHandler(object):
   
   TOKEN_RESPONSE_PARSERS = {
     'google'      : '_json_parser',
+    'googleplus'  : '_json_parser',
     'windows_live': '_json_parser',
     'foursquare'  : '_json_parser',
     'facebook'    : '_query_string_parser',
@@ -400,6 +404,17 @@ class SimpleAuthHandler(object):
     if 'id' not in data and 'sub' in data:
       data['id'] = data['sub']
     return data
+
+  def _get_googleplus_user_info(self, auth_info, key=None, secret=None):
+    """Returns a dict of currenly logging in user.
+    Google+ API endpoint:
+    https://www.googleapis.com/plus/v1/people/me
+    """
+    resp = self._oauth2_request(
+      'https://www.googleapis.com/plus/v1/people/me?{0}',
+      auth_info['access_token']
+    )
+    return json.loads(resp)
     
   def _get_windows_live_user_info(self, auth_info, key=None, secret=None):
     """Windows Live API user profile endpoint.
