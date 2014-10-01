@@ -58,7 +58,7 @@ class DummyAuthHandler(RequestHandler, SimpleAuthHandler):
     RequestHandler.dispatch(self)
     self.response.headers['SessionMock'] = json.dumps(self.session)
 
-  def _on_signin(self, user_data, auth_info, provider, extra_state_params):
+  def _on_signin(self, user_data, auth_info, provider, extra):
     self.redirect('/logged_in?provider=%s' % provider)
     
   def _callback_uri_for(self, provider):
@@ -212,7 +212,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
 
     self.assertEqual(resp.status_int, 302)
 
-    state = json.dumps({'OAUTH2_CSRF_STATE': 'valid-csrf-token', 'extra_state_params': []})
+    state = json.dumps({'OAUTH2_CSRF_STATE': 'valid-csrf-token', 'extra': []})
     params = OrderedDict()
     params['scope'] = 'a_scope'
     params['state'] = state
@@ -241,14 +241,10 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
       "expires_in": 3600,
       "token_type":"Bearer"
       })
-    self.set_urlfetch_response('https://dummy/oauth2_token', 
-      content=fetch_resp)
+    self.set_urlfetch_response('https://dummy/oauth2_token', content=fetch_resp)
 
     state = json.dumps({'OAUTH2_CSRF_STATE': csrf_token})
-
-    query = urlencode({'code': 'auth-code',
-                       'state': state})
-
+    query = urlencode({'code': 'auth-code', 'state': state})
     resp = self.app.get_response('/auth/dummy_oauth2/callback?' + query)
 
     self.assertEqual(resp.status_int, 302)
@@ -265,12 +261,8 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     DummyAuthHandler.SESSION_MOCK = {}
 
     token = SimpleAuthHandler()._generate_csrf_token()
-
     state = json.dumps({'OAUTH2_CSRF_STATE': token})
-
-    query = urlencode({'code': 'auth-code',
-                       'state': state})
-
+    query = urlencode({'code': 'auth-code', 'state': state})
     resp = self.app.get_response('/auth/dummy_oauth2/callback?' + query)
 
     self.assertEqual(resp.status_int, 500)
@@ -288,10 +280,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     }
 
     state = json.dumps({'OAUTH2_CSRF_STATE': token2})
-
-    query = urlencode({'code': 'auth-code',
-                       'state': state})
-
+    query = urlencode({'code': 'auth-code', 'state': state})
     resp = self.app.get_response('/auth/dummy_oauth2/callback?' + query)
 
     self.assertEqual(resp.status_int, 500)

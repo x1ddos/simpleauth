@@ -106,7 +106,7 @@ class SimpleAuthHandler(object):
     'foursquare'  : '_json_parser',
     'facebook'    : '_query_string_parser',
     'linkedin'    : '_query_string_parser',
-    'linkedin2'    : '_json_parser',
+    'linkedin2'   : '_json_parser',
     'twitter'     : '_query_string_parser'
   }
 
@@ -135,7 +135,7 @@ class SimpleAuthHandler(object):
     """
     extra_state_params = None
     if self.request is not None and self.request.params is not None:
-        extra_state_params = self.request.params.items()
+      extra_state_params = self.request.params.items()
 
     cfg = self.PROVIDERS.get(provider, (None,))
     meth = self._auth_method(cfg[0], 'init')
@@ -155,16 +155,17 @@ class SimpleAuthHandler(object):
     """
     cfg = self.PROVIDERS.get(provider, (None,))
     meth = self._auth_method(cfg[0], 'callback')
+
     # Get user profile data and their access token
     result = meth(provider, *cfg[-1:])
     user_data, auth_info = result[0], result[1]
 
-    extra_state_params = None
+    extra = None
     if 2 in result:
-        extra_state_params = result[2]
+      extra = result[2]
 
     # The rest should be implemented by the actual app
-    self._on_signin(user_data, auth_info, provider, extra_state_params)
+    self._on_signin(user_data, auth_info, provider, extra=extra)
 
   def _auth_method(self, auth_type, step):
     """Constructs proper method name and returns a callable.
@@ -182,7 +183,7 @@ class SimpleAuthHandler(object):
     except AttributeError:
       raise UnknownAuthMethodError(method)
 
-  def _oauth2_init(self, provider, auth_url, extra_state_params=None):
+  def _oauth2_init(self, provider, auth_url, extra=None):
     """Initiates OAuth 2.0 web flow"""
     key, secret, scope = self._get_consumer_info_for(provider)
     callback_url = self._callback_uri_for(provider)
@@ -202,8 +203,8 @@ class SimpleAuthHandler(object):
       csrf_token = self._generate_csrf_token()
       state_params['OAUTH2_CSRF_STATE'] = csrf_token
       self.session[self.OAUTH2_CSRF_SESSION_PARAM] = csrf_token
-    if extra_state_params is not None:
-        state_params['extra_state_params'] = extra_state_params
+    if extra is not None:
+      state_params['extra'] = extra
     
     if len(state_params):
       params.update(state=json.dumps(state_params))
@@ -224,7 +225,7 @@ class SimpleAuthHandler(object):
     client_id, client_secret, scope = self._get_consumer_info_for(provider)
 
     json_state = self.request.get('state')
-    logging.info(json_state)
+    logging.debug(json_state)
     state = json.loads(json_state)
     
     if self.OAUTH2_CSRF_STATE:
@@ -235,7 +236,7 @@ class SimpleAuthHandler(object):
         raise InvalidCSRFTokenError(
           '[%s] vs [%s]' % (_expected, _actual), provider)
       
-    extra_state_params = state.get('extra_state_params', None)
+    extra = state.get('extra', None)
     
     payload = {
       'code': code,
@@ -257,9 +258,9 @@ class SimpleAuthHandler(object):
 
     auth_info = _parser(resp.content)
     user_data = _fetcher(auth_info, key=client_id, secret=client_secret)
-    return user_data, auth_info, extra_state_params
+    return user_data, auth_info, extra
 
-  def _oauth1_init(self, provider, auth_urls, extra_state_params=None):
+  def _oauth1_init(self, provider, auth_urls, extra=None):
     """Initiates OAuth 1.0 dance"""
     key, secret = self._get_consumer_info_for(provider)
     callback_url = self._callback_uri_for(provider)
@@ -318,7 +319,7 @@ class SimpleAuthHandler(object):
     user_data = _fetcher(auth_info, key=consumer_key, secret=consumer_secret)
     return (user_data, auth_info)
 
-  def _openid_init(self, provider='openid', identity=None, extra_state_params=None):
+  def _openid_init(self, provider='openid', identity=None, extra=None):
     """Initiates OpenID dance using App Engine users module API."""
     identity_url = identity or self.request.get('identity_url')
     callback_url = self._callback_uri_for(provider)

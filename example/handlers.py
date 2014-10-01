@@ -75,7 +75,7 @@ class BaseRequestHandler(webapp2.RequestHandler):
 class RootHandler(BaseRequestHandler):
   def get(self):
     """Handles default landing page"""
-    self.render('home.html', { 'destination_url': urllib.quote_plus('/') })
+    self.render('home.html', {'destination_url': urllib.quote_plus('/')})
 
 class ProfileHandler(BaseRequestHandler):
   def get(self):
@@ -128,11 +128,13 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
       'public-profile-url': 'link'
     },
     'foursquare'   : {
-      'photo'    : lambda photo: ('avatar_url', photo.get('prefix') + '100x100' + photo.get('suffix')),
+      'photo'    : lambda photo: ('avatar_url', photo.get('prefix') + '100x100'\
+                                              + photo.get('suffix')),
       'firstName': 'firstName',
       'lastName' : 'lastName',
-      'contact'  : lambda contact: ('email',contact.get('email')),
-      'id'       : lambda id: ('link', 'http://foursquare.com/user/{0}'.format(id))
+      'contact'  : lambda contact: ('email', contact.get('email')),
+      'id'       : lambda id: ('link',
+                               'http://foursquare.com/user/{0}'.format(id))
     },
     'openid'   : {
       'id'      : lambda id: ('avatar_url', '/img/missing-avatar.png'),
@@ -141,7 +143,7 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
     }
   }
 
-  def _on_signin(self, data, auth_info, provider, extra_state_params=None):
+  def _on_signin(self, data, auth_info, provider, extra=None):
     """Callback whenever a new or existing user is logging in.
      data is a user info dictionary.
      auth_info contains access token or oauth token and secret.
@@ -191,11 +193,11 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
     # normally do this.
     self.session.add_flash(data, 'data - from _on_signin(...)')
     self.session.add_flash(auth_info, 'auth_info - from _on_signin(...)')
-    self.session.add_flash({'extra_state_params': extra_state_params}, 'extra_state_params - from _on_signin(...)')
+    self.session.add_flash({'extra': extra}, 'extra - from _on_signin(...)')
 
-    if extra_state_params is not None:
-      md = webob.multidict.MultiDict(extra_state_params)
-      destination_url = md.get('destination_url', '/profile')
+    if extra is not None:
+      params = webob.multidict.MultiDict(extra)
+      destination_url = params.get('destination_url', '/profile')
       return self.redirect(str(destination_url))
     else:
       # Go to the profile page
