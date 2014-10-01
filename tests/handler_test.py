@@ -5,6 +5,10 @@ from tests import TestMixin
 import time
 import base64
 
+from collections import OrderedDict
+from urllib import urlencode
+
+
 try:
   import json
 except ImportError:
@@ -54,7 +58,7 @@ class DummyAuthHandler(RequestHandler, SimpleAuthHandler):
     RequestHandler.dispatch(self)
     self.response.headers['SessionMock'] = json.dumps(self.session)
 
-  def _on_signin(self, user_data, auth_info, provider):
+  def _on_signin(self, user_data, auth_info, provider, extra_state_params):
     self.redirect('/logged_in?provider=%s' % provider)
     
   def _callback_uri_for(self, provider):
@@ -207,12 +211,18 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     resp = self.app.get_response('/auth/dummy_oauth2')
 
     self.assertEqual(resp.status_int, 302)
-    self.assertEqual(resp.headers['Location'], 'https://dummy/oauth2?'
-      'scope=a_scope&'
-      'state=valid-csrf-token&'
-      'redirect_uri=%2Fauth%2Fdummy_oauth2%2Fcallback&'
-      'response_type=code&'
-      'client_id=cl_id')
+
+    state = json.dumps({'OAUTH2_CSRF_STATE': 'valid-csrf-token', 'extra_state_params': []})
+    params = OrderedDict()
+    params['scope'] = 'a_scope'
+    params['state'] = state
+    params['redirect_uri'] = '/auth/dummy_oauth2/callback'
+    params['response_type'] = 'code'
+    params['client_id'] = 'cl_id'
+
+    query = urlencode(params)
+
+    self.assertEqual(resp.headers['Location'], 'https://dummy/oauth2?' + query)
 
     session = json.loads(resp.headers['SessionMock'])
     session_token = session.get(DummyAuthHandler.OAUTH2_CSRF_SESSION_PARAM, '')
@@ -234,8 +244,12 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     self.set_urlfetch_response('https://dummy/oauth2_token', 
       content=fetch_resp)
 
-    resp = self.app.get_response('/auth/dummy_oauth2/callback?'
-      'code=auth-code&state=%s' % csrf_token)
+    state = json.dumps({'OAUTH2_CSRF_STATE': csrf_token})
+
+    query = urlencode({'code': 'auth-code',
+                       'state': state})
+
+    resp = self.app.get_response('/auth/dummy_oauth2/callback?' + query)
 
     self.assertEqual(resp.status_int, 302)
     self.assertEqual(resp.headers['Location'], 
@@ -251,8 +265,13 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     DummyAuthHandler.SESSION_MOCK = {}
 
     token = SimpleAuthHandler()._generate_csrf_token()
-    resp = self.app.get_response('/auth/dummy_oauth2/callback?'
-      'code=auth-code&state=%s' % token)
+
+    state = json.dumps({'OAUTH2_CSRF_STATE': token})
+
+    query = urlencode({'code': 'auth-code',
+                       'state': state})
+
+    resp = self.app.get_response('/auth/dummy_oauth2/callback?' + query)
 
     self.assertEqual(resp.status_int, 500)
     self.assertRegexpMatches(resp.body, 'InvalidCSRFTokenError')
@@ -268,8 +287,12 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
       DummyAuthHandler.OAUTH2_CSRF_SESSION_PARAM: token1
     }
 
-    resp = self.app.get_response('/auth/dummy_oauth2/callback?'
-      'code=auth-code&state=%s' % token2)
+    state = json.dumps({'OAUTH2_CSRF_STATE': token2})
+
+    query = urlencode({'code': 'auth-code',
+                       'state': state})
+
+    resp = self.app.get_response('/auth/dummy_oauth2/callback?' + query)
 
     self.assertEqual(resp.status_int, 500)
     self.assertRegexpMatches(resp.body, 'InvalidCSRFTokenError')
@@ -312,7 +335,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     encoded = base64.urlsafe_b64encode(token)
     self.assertFalse(h._validate_csrf_token(encoded, encoded))
 
-    # token timeout
+    # token timeout
     timeout = long(time.time()) - h.OAUTH2_CSRF_TOKEN_TIMEOUT - 1
     token = h._generate_csrf_token(_time=timeout)
     self.assertFalse(h._validate_csrf_token(token, token))
