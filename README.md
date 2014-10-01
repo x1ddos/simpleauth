@@ -90,7 +90,7 @@ Links:
       def _get_consumer_info_for(self, provider):
         """Should return a tuple (key, secret) for auth init requests.
         For OAuth 2.0 you should also return a scope, e.g.
-        ('my app id', 'my app secret', 'email,user_about_me')
+        ('my app/client id', 'my app/client secret', 'email,user_about_me')
 
         The scope depends solely on the provider.
         See example/secrets.py.template
