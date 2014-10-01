@@ -52,12 +52,13 @@ Links:
     class AuthHandler(SomeBaseRequestHandler, SimpleAuthHandler):
       """Authentication handler for all kinds of auth."""
 
-      def _on_signin(self, data, auth_info, provider):
+      def _on_signin(self, data, auth_info, provider, extra=None):
       """Callback whenever a new or existing user is logging in.
       data is a user info dictionary.
       auth_info contains access token or oauth token and secret.
+      extra is a dict with additional params passed to the auth init handler.
 
-      See what's in it with logging.info(data, auth_info)
+      See what's in it with e.g. logging.info(auth_info)
       """
 
       auth_id = '%s:%s' % (provider, data['id'])

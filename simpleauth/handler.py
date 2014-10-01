@@ -2,6 +2,7 @@
 import os
 import sys
 import logging
+import json
 
 from urllib import urlencode
 import urlparse
@@ -105,7 +106,7 @@ class SimpleAuthHandler(object):
     'foursquare'  : '_json_parser',
     'facebook'    : '_query_string_parser',
     'linkedin'    : '_query_string_parser',
-    'linkedin2'    : '_json_parser',
+    'linkedin2'   : '_json_parser',
     'twitter'     : '_query_string_parser'
   }
 
@@ -116,11 +117,16 @@ class SimpleAuthHandler(object):
   # CSRF protection assumes there's self.session method on the handler 
   # instance. See BaseRequestHandler in example/handlers.py for sample usage.
   OAUTH2_CSRF_STATE = False
+  OAUTH2_CSRF_STATE_PARAM = 'csrf'
   OAUTH2_CSRF_SESSION_PARAM = 'oauth2_state'
   OAUTH2_CSRF_TOKEN_TIMEOUT = 3600 # 1 hour
   # This will form the actual state parameter, e.g. token:timestamp
   # You don't normally need to override it.
   OAUTH2_CSRF_DELIMITER = ':'
+
+  # Extra params passed to OAuth2 init handler are stored in the state
+  # under this name.
+  OAUTH2_STATE_EXTRA_PARAM = 'extra'
   
   def _simple_auth(self, provider=None):
     """Dispatcher of auth init requests, e.g.
@@ -132,11 +138,15 @@ class SimpleAuthHandler(object):
     May raise one of the exceptions defined at the beginning
     of the module. See README for details on error handling.
     """
+    extra = None
+    if self.request is not None and self.request.params is not None:
+      extra = self.request.params.items()
+
     cfg = self.PROVIDERS.get(provider, (None,))
     meth = self._auth_method(cfg[0], 'init')
     # We don't respond directly in here. Specific methods are in charge
     # with redirecting user to an auth endpoint
-    meth(provider, cfg[1])
+    meth(provider, cfg[1], extra)
       
   def _auth_callback(self, provider=None):
     """Dispatcher of callbacks from auth providers, e.g.
@@ -150,10 +160,17 @@ class SimpleAuthHandler(object):
     """
     cfg = self.PROVIDERS.get(provider, (None,))
     meth = self._auth_method(cfg[0], 'callback')
+
     # Get user profile data and their access token
-    user_data, auth_info = meth(provider, *cfg[-1:])
+    result = meth(provider, *cfg[-1:])
+    user_data, auth_info = result[0], result[1]
+
+    extra = None
+    if len(result) > 2:
+      extra = result[2]
+
     # The rest should be implemented by the actual app
-    self._on_signin(user_data, auth_info, provider)
+    self._on_signin(user_data, auth_info, provider, extra=extra)
 
   def _auth_method(self, auth_type, step):
     """Constructs proper method name and returns a callable.
@@ -171,7 +188,7 @@ class SimpleAuthHandler(object):
     except AttributeError:
       raise UnknownAuthMethodError(method)
 
-  def _oauth2_init(self, provider, auth_url):
+  def _oauth2_init(self, provider, auth_url, extra=None):
     """Initiates OAuth 2.0 web flow"""
     key, secret, scope = self._get_consumer_info_for(provider)
     callback_url = self._callback_uri_for(provider)
@@ -185,10 +202,17 @@ class SimpleAuthHandler(object):
     if scope:
       params.update(scope=scope)
 
+    state_params = {}
+    
     if self.OAUTH2_CSRF_STATE:
-      state = self._generate_csrf_token()
-      params.update(state=state)
-      self.session[self.OAUTH2_CSRF_SESSION_PARAM] = state
+      csrf_token = self._generate_csrf_token()
+      state_params[self.OAUTH2_CSRF_STATE_PARAM] = csrf_token
+      self.session[self.OAUTH2_CSRF_SESSION_PARAM] = csrf_token
+    if extra is not None:
+      state_params[self.OAUTH2_STATE_EXTRA_PARAM] = extra
+    
+    if len(state_params):
+      params.update(state=json.dumps(state_params))
 
     target_url = auth_url.format(urlencode(params)) 
     logging.debug('Redirecting user to %s', target_url)
@@ -205,14 +229,20 @@ class SimpleAuthHandler(object):
     callback_url = self._callback_uri_for(provider)
     client_id, client_secret, scope = self._get_consumer_info_for(provider)
 
+    json_state = self.request.get('state')
+    logging.debug(json_state)
+    state = json.loads(json_state)
+    
     if self.OAUTH2_CSRF_STATE:
       _expected = self.session.pop(self.OAUTH2_CSRF_SESSION_PARAM, '')
-      _actual = self.request.get('state')
+      _actual = state[self.OAUTH2_CSRF_STATE_PARAM]
       # If _expected is '' it won't validate anyway.
       if not self._validate_csrf_token(_expected, _actual):
         raise InvalidCSRFTokenError(
           '[%s] vs [%s]' % (_expected, _actual), provider)
       
+    extra = state.get(self.OAUTH2_STATE_EXTRA_PARAM, None)
+    
     payload = {
       'code': code,
       'client_id': client_id,
@@ -233,9 +263,9 @@ class SimpleAuthHandler(object):
 
     auth_info = _parser(resp.content)
     user_data = _fetcher(auth_info, key=client_id, secret=client_secret)
-    return (user_data, auth_info)
-    
-  def _oauth1_init(self, provider, auth_urls):
+    return user_data, auth_info, extra
+
+  def _oauth1_init(self, provider, auth_urls, extra=None):
     """Initiates OAuth 1.0 dance"""
     key, secret = self._get_consumer_info_for(provider)
     callback_url = self._callback_uri_for(provider)
@@ -293,8 +323,8 @@ class SimpleAuthHandler(object):
     auth_info = _parser(content)
     user_data = _fetcher(auth_info, key=consumer_key, secret=consumer_secret)
     return (user_data, auth_info)
-    
-  def _openid_init(self, provider='openid', identity=None):
+
+  def _openid_init(self, provider='openid', identity=None, extra=None):
     """Initiates OpenID dance using App Engine users module API."""
     identity_url = identity or self.request.get('identity_url')
     callback_url = self._callback_uri_for(provider)
