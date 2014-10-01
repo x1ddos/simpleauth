@@ -9,8 +9,10 @@
   {% else %}
     <p>Try logging in with one of these:</p>
     <p>
+      <a href="/auth/googleplus?destination_url={{ destination_url }}"
+         class="btn">Google+</a>
       <a href="/auth/google?destination_url={{ destination_url }}"
-         class="btn">Google</a>
+         class="btn">Google (deprecated)</a>
       <a href="/auth/facebook?destination_url={{ destination_url }}"
          class="btn">Facebook</a>
       <a href="/auth/twitter" class="btn">Twitter</a>

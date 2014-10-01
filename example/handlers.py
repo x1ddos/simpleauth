@@ -11,6 +11,9 @@ from jinja2.runtime import TemplateNotFound
 from simpleauth import SimpleAuthHandler
 
 
+DEFAULT_AVATAR_URL = '/img/missing-avatar.png'
+
+
 class BaseRequestHandler(webapp2.RequestHandler):
   def dispatch(self):
     # Get a session store for this request.
@@ -106,6 +109,11 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
       'name'   : 'name',
       'profile': 'link'
     },
+    'googleplus': {
+      'image'      : lambda img: ('avatar_url', img.get('url', DEFAULT_AVATAR_URL)),
+      'displayName': 'name',
+      'url'        : 'link'
+    },
     'windows_live': {
       'avatar_url': 'avatar_url',
       'name'      : 'name',
@@ -136,7 +144,7 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
                                'http://foursquare.com/user/{0}'.format(id))
     },
     'openid'   : {
-      'id'      : lambda id: ('avatar_url', '/img/missing-avatar.png'),
+      'id'      : lambda id: ('avatar_url', DEFAULT_AVATAR_URL),
       'nickname': 'name',
       'email'   : 'link'
     }
