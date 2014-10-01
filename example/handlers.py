@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 import secrets
-import urllib
 
 import webapp2
 import webob.multidict
@@ -75,7 +74,7 @@ class BaseRequestHandler(webapp2.RequestHandler):
 class RootHandler(BaseRequestHandler):
   def get(self):
     """Handles default landing page"""
-    self.render('home.html', {'destination_url': urllib.quote_plus('/')})
+    self.render('home.html', {'destination_url': '/profile'})
 
 class ProfileHandler(BaseRequestHandler):
   def get(self):
