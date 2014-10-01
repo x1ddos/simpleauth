@@ -6,7 +6,7 @@ import time
 import base64
 
 from collections import OrderedDict
-from urllib import urlencode
+from urllib import urlencode, quote_plus
 
 
 try:
@@ -59,7 +59,8 @@ class DummyAuthHandler(RequestHandler, SimpleAuthHandler):
     self.response.headers['SessionMock'] = json.dumps(self.session)
 
   def _on_signin(self, user_data, auth_info, provider, extra):
-    self.redirect('/logged_in?provider=%s' % provider)
+    self.redirect('/logged_in?provider=%s&extra=%s' % (
+      provider, quote_plus(json.dumps(extra))))
     
   def _callback_uri_for(self, provider):
     return '/auth/%s/callback' % provider
@@ -156,7 +157,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     resp = self.app.get_response('/auth/openid/callback')
     self.assertEqual(resp.status_int, 302)
     self.assertEqual(resp.headers['Location'], 
-      'http://localhost/logged_in?provider=openid')
+      'http://localhost/logged_in?provider=openid&extra=null')
     
     uinfo, auth = self.handler._openid_callback()
     self.assertEqual(auth, {'provider': 'example.org'})
@@ -186,7 +187,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     resp = self.app.get_response(url)
     self.assertEqual(resp.status_int, 302)
     self.assertEqual(resp.headers['Location'], 
-      'http://localhost/logged_in?provider=dummy_oauth1')
+      'http://localhost/logged_in?provider=dummy_oauth1&extra=null')
         
   def test_oauth1_callback_failure(self):
     self.expectErrors()
@@ -212,7 +213,10 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
 
     self.assertEqual(resp.status_int, 302)
 
-    state = json.dumps({'OAUTH2_CSRF_STATE': 'valid-csrf-token', 'extra': []})
+    state = json.dumps({
+      DummyAuthHandler.OAUTH2_CSRF_STATE_PARAM: 'valid-csrf-token',
+      'extra': []
+      })
     params = OrderedDict()
     params['scope'] = 'a_scope'
     params['state'] = state
@@ -243,13 +247,16 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
       })
     self.set_urlfetch_response('https://dummy/oauth2_token', content=fetch_resp)
 
-    state = json.dumps({'OAUTH2_CSRF_STATE': csrf_token})
+    state = json.dumps({
+      DummyAuthHandler.OAUTH2_CSRF_STATE_PARAM: csrf_token,
+      DummyAuthHandler.OAUTH2_STATE_EXTRA_PARAM: []
+      })
     query = urlencode({'code': 'auth-code', 'state': state})
     resp = self.app.get_response('/auth/dummy_oauth2/callback?' + query)
 
     self.assertEqual(resp.status_int, 302)
     self.assertEqual(resp.headers['Location'], 
-      'http://localhost/logged_in?provider=dummy_oauth2')
+      'http://localhost/logged_in?provider=dummy_oauth2&extra=%5B%5D')
 
     # token should be removed after during the authorization step
     session = json.loads(resp.headers['SessionMock'])
@@ -261,7 +268,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     DummyAuthHandler.SESSION_MOCK = {}
 
     token = SimpleAuthHandler()._generate_csrf_token()
-    state = json.dumps({'OAUTH2_CSRF_STATE': token})
+    state = json.dumps({DummyAuthHandler.OAUTH2_CSRF_STATE_PARAM: token})
     query = urlencode({'code': 'auth-code', 'state': state})
     resp = self.app.get_response('/auth/dummy_oauth2/callback?' + query)
 
@@ -279,7 +286,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
       DummyAuthHandler.OAUTH2_CSRF_SESSION_PARAM: token1
     }
 
-    state = json.dumps({'OAUTH2_CSRF_STATE': token2})
+    state = json.dumps({DummyAuthHandler.OAUTH2_CSRF_STATE_PARAM: token2})
     query = urlencode({'code': 'auth-code', 'state': state})
     resp = self.app.get_response('/auth/dummy_oauth2/callback?' + query)
 

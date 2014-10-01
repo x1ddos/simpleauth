@@ -117,11 +117,16 @@ class SimpleAuthHandler(object):
   # CSRF protection assumes there's self.session method on the handler 
   # instance. See BaseRequestHandler in example/handlers.py for sample usage.
   OAUTH2_CSRF_STATE = False
+  OAUTH2_CSRF_STATE_PARAM = 'csrf'
   OAUTH2_CSRF_SESSION_PARAM = 'oauth2_state'
   OAUTH2_CSRF_TOKEN_TIMEOUT = 3600 # 1 hour
   # This will form the actual state parameter, e.g. token:timestamp
   # You don't normally need to override it.
   OAUTH2_CSRF_DELIMITER = ':'
+
+  # Extra params passed to OAuth2 init handler are stored in the state
+  # under this name.
+  OAUTH2_STATE_EXTRA_PARAM = 'extra'
   
   def _simple_auth(self, provider=None):
     """Dispatcher of auth init requests, e.g.
@@ -133,15 +138,15 @@ class SimpleAuthHandler(object):
     May raise one of the exceptions defined at the beginning
     of the module. See README for details on error handling.
     """
-    extra_state_params = None
+    extra = None
     if self.request is not None and self.request.params is not None:
-      extra_state_params = self.request.params.items()
+      extra = self.request.params.items()
 
     cfg = self.PROVIDERS.get(provider, (None,))
     meth = self._auth_method(cfg[0], 'init')
     # We don't respond directly in here. Specific methods are in charge
     # with redirecting user to an auth endpoint
-    meth(provider, cfg[1], extra_state_params)
+    meth(provider, cfg[1], extra)
       
   def _auth_callback(self, provider=None):
     """Dispatcher of callbacks from auth providers, e.g.
@@ -161,7 +166,7 @@ class SimpleAuthHandler(object):
     user_data, auth_info = result[0], result[1]
 
     extra = None
-    if 2 in result:
+    if len(result) > 2:
       extra = result[2]
 
     # The rest should be implemented by the actual app
@@ -201,10 +206,10 @@ class SimpleAuthHandler(object):
     
     if self.OAUTH2_CSRF_STATE:
       csrf_token = self._generate_csrf_token()
-      state_params['OAUTH2_CSRF_STATE'] = csrf_token
+      state_params[self.OAUTH2_CSRF_STATE_PARAM] = csrf_token
       self.session[self.OAUTH2_CSRF_SESSION_PARAM] = csrf_token
     if extra is not None:
-      state_params['extra'] = extra
+      state_params[self.OAUTH2_STATE_EXTRA_PARAM] = extra
     
     if len(state_params):
       params.update(state=json.dumps(state_params))
@@ -230,13 +235,13 @@ class SimpleAuthHandler(object):
     
     if self.OAUTH2_CSRF_STATE:
       _expected = self.session.pop(self.OAUTH2_CSRF_SESSION_PARAM, '')
-      _actual = state['OAUTH2_CSRF_STATE']
+      _actual = state[self.OAUTH2_CSRF_STATE_PARAM]
       # If _expected is '' it won't validate anyway.
       if not self._validate_csrf_token(_expected, _actual):
         raise InvalidCSRFTokenError(
           '[%s] vs [%s]' % (_expected, _actual), provider)
       
-    extra = state.get('extra', None)
+    extra = state.get(self.OAUTH2_STATE_EXTRA_PARAM, None)
     
     payload = {
       'code': code,

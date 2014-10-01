@@ -147,6 +147,7 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
     """Callback whenever a new or existing user is logging in.
      data is a user info dictionary.
      auth_info contains access token or oauth token and secret.
+     extra is a dict with additional params passed to the auth init handler.
     """
     auth_id = '%s:%s' % (provider, data['id'])
     logging.info('Looking for a user with id %s', auth_id)
