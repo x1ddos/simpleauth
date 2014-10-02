@@ -199,9 +199,8 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
 
     # Remember auth data during redirect, just for this demo. You wouldn't
     # normally do this.
-    self.session.add_flash(data, 'data - from _on_signin(...)')
-    self.session.add_flash(auth_info, 'auth_info - from _on_signin(...)')
-    self.session.add_flash({'extra': extra}, 'extra - from _on_signin(...)')
+    self.session.add_flash(auth_info, 'auth_info')
+    self.session.add_flash({'extra': extra}, 'extra')
 
     if extra is not None:
       params = webob.multidict.MultiDict(extra)
