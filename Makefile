@@ -14,7 +14,7 @@ test t:
 dist:
 	$(PYTHON) setup.py $(FLAGS)
 
-VER=
+VER ?=
 update_example:
 	appcfg.py --oauth2 update example/ -V $(VER) $(FLAGS)
 
