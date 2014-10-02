@@ -142,6 +142,8 @@ If you're running two versions of the app, say one on `localhost` and another
 on `example.org`, simply add all of the callbacks including host, port and 
 protocol to `Redirect URIs` list on API Access tab.
 
+`userinfo` endpoint is [deprecated][14], use Google+ (googleplus) provider.
+
 ### Facebook
 
   - Docs: https://developers.facebook.com/docs/authentication/server-side/
@@ -175,7 +177,7 @@ https://developer.linkedin.com/documents/authentication#granting
 ### Windows Live
 
   - Docs: http://msdn.microsoft.com/en-us/library/live/hh243649.aspx
-  - Get client/secret: https://manage.dev.live.com
+  - Get client/secret: https://account.live.com/developers/applications
 
 Scopes are space-separated, e.g. `wl.signin wl.basic`.
 
