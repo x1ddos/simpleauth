@@ -4,4 +4,6 @@ dist
 build
 example/tmp
 example/secrets.py
+example/secrets.py.*
+!example/secrets.py.template
 MANIFEST
