@@ -29,8 +29,9 @@ class MockURLFetchServiceStub(apiproxy_stub.APIProxyStub):
     urlfetch_service_pb.URLFetchRequest.POST: 'POST',
     urlfetch_service_pb.URLFetchRequest.HEAD: 'HEAD',
     urlfetch_service_pb.URLFetchRequest.PUT: 'PUT',
-    urlfetch_service_pb.URLFetchRequest.DELETE: 'DELETE' }
-  
+    urlfetch_service_pb.URLFetchRequest.DELETE: 'DELETE'
+  }
+
   def __init__(self, service_name='urlfetch'):
       super(MockURLFetchServiceStub, self).__init__(service_name)
 
@@ -56,7 +57,7 @@ class MockURLFetchServiceStub(apiproxy_stub.APIProxyStub):
         urlfetch_service_pb.URLFetchServiceError.UNSPECIFIED_ERROR)
 
     return method
-          
+
   def _Dynamic_Fetch(self, request, response):
     url = request.url()
     method = self._decode_http_method(request.method())
@@ -64,9 +65,8 @@ class MockURLFetchServiceStub(apiproxy_stub.APIProxyStub):
       or MockURLFetchServiceStub._responses.get((url, None))
 
     if http_response is None:
-      raise Exception(
-        "No HTTP response was found for the URL '%s' %s" %
-        (url, repr(MockURLFetchServiceStub._responses)) )
+      raise Exception("No HTTP response was found for the URL '%s' %s" %
+                      (url, repr(MockURLFetchServiceStub._responses)))
 
     if isinstance(http_response['content'], DownloadError):
       raise http_response['content']
@@ -82,11 +82,11 @@ class MockURLFetchServiceStub(apiproxy_stub.APIProxyStub):
 
 
 class TestMixin(object):
-  def setUp(self): 
+  def setUp(self):
     super(TestMixin, self).setUp()
     self.testbed = testbed.Testbed()
     self.testbed.activate()
-    self.testbed.init_datastore_v3_stub()    
+    self.testbed.init_datastore_v3_stub()
     self.testbed.init_memcache_stub()
     self.testbed.init_user_stub()
     urlfetch_stub = MockURLFetchServiceStub()
@@ -94,7 +94,7 @@ class TestMixin(object):
 
     self._logger = logging.getLogger()
     self._old_log_level = self._logger.getEffectiveLevel()
-    
+
   def tearDown(self):
     super(TestMixin, self).tearDown()
     self._logger.setLevel(self._old_log_level)
@@ -119,7 +119,7 @@ class TestMixin(object):
   def logout_user(self):
     self.login_user(None, None)
 
-  def set_urlfetch_response(self, url, content=None, status_code=None, 
+  def set_urlfetch_response(self, url, content=None, status_code=None,
                             headers=None, method=None):
     """
     Register an HTTP response for ``url`` with body containing ``content``.
@@ -129,30 +129,30 @@ class TestMixin(object):
       # Will cause a 200 OK response with no body for all HTTP methods:
       self.set_response("http://example.com")
 
-      # Will cause a 404 Not Found for GET requests with 'gone fishing' 
+      # Will cause a 404 Not Found for GET requests with 'gone fishing'
       # as the body:
-      self.set_response("http://example.com/404ed", 
+      self.set_response("http://example.com/404ed",
         content='gone fishing', status_code=404)
 
-      # Will cause a 303 See Other for POST requests with a Location header 
+      # Will cause a 303 See Other for POST requests with a Location header
       # and no body:
-      self.set_response("http://example.com/posts", 
+      self.set_response("http://example.com/posts",
         status_code=303, headers={'Location': 'http://example.com/posts/123'})
 
       # Will cause a DownloadError to be raised when the URL is requested:
       from google.appengine.api import urlfetch
-      self.set_response("http://example.com/boom", 
+      self.set_response("http://example.com/boom",
         content=urlfetch.DownloadError("Something Failed"))
 
     :param url: the URL for the HTTP request.
-    :param content: the HTTP response's body, or an instance of DownloadError 
+    :param content: the HTTP response's body, or an instance of DownloadError
                     to simulate a failure.
     :param status_code: the expected status code. Defaults to 200 if not set.
     :param headers: a ``dict`` of headers for the HTTP response.
-    :param method: the HTTP method that the response must match. If not set, 
+    :param method: the HTTP method that the response must match. If not set,
                    all requests with the same URL will return the same thing.
     """
-    MockURLFetchServiceStub.set_response(url, 
+    MockURLFetchServiceStub.set_response(url,
       content=content, status_code=status_code, headers=headers, method=method)
 
   def expectErrors(self):

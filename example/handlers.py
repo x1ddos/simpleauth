@@ -12,6 +12,8 @@ from simpleauth import SimpleAuthHandler
 
 
 DEFAULT_AVATAR_URL = '/img/missing-avatar.png'
+FACEBOOK_AVATAR_URL = 'https://graph.facebook.com/{0}/picture?type=large'
+FOURSQUARE_USER_LINK = 'http://foursquare.com/user/{0}'
 
 
 class BaseRequestHandler(webapp2.RequestHandler):
@@ -51,7 +53,6 @@ class BaseRequestHandler(webapp2.RequestHandler):
     """Returns true if a user is currently logged in, false otherwise"""
     return self.auth.get_user_by_session() is not None
 
-
   def render(self, template_name, template_vars={}):
     # Preset values for the template
     values = {
@@ -79,6 +80,7 @@ class RootHandler(BaseRequestHandler):
     """Handles default landing page"""
     self.render('home.html', {'destination_url': '/profile'})
 
+
 class ProfileHandler(BaseRequestHandler):
   def get(self):
     """Handles GET /profile"""
@@ -98,55 +100,53 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
   OAUTH2_CSRF_STATE = True
 
   USER_ATTRS = {
-    'facebook' : {
-      'id'     : lambda id: ('avatar_url',
-        'http://graph.facebook.com/{0}/picture?type=large'.format(id)),
-      'name'   : 'name',
-      'link'   : 'link'
+    'facebook': {
+      'id': lambda id: ('avatar_url', FACEBOOK_AVATAR_URL.format(id)),
+      'name': 'name',
+      'link': 'link'
     },
-    'google'   : {
+    'google': {
       'picture': 'avatar_url',
-      'name'   : 'name',
+      'name': 'name',
       'profile': 'link'
     },
     'googleplus': {
-      'image'      : lambda img: ('avatar_url', img.get('url', DEFAULT_AVATAR_URL)),
+      'image': lambda img: ('avatar_url', img.get('url', DEFAULT_AVATAR_URL)),
       'displayName': 'name',
-      'url'        : 'link'
+      'url': 'link'
     },
     'windows_live': {
       'avatar_url': 'avatar_url',
-      'name'      : 'name',
-      'link'      : 'link'
+      'name': 'name',
+      'link': 'link'
     },
-    'twitter'  : {
+    'twitter': {
       'profile_image_url': 'avatar_url',
-      'screen_name'      : 'name',
-      'link'             : 'link'
+      'screen_name': 'name',
+      'link': 'link'
     },
-    'linkedin' : {
-      'picture-url'       : 'avatar_url',
-      'first-name'        : 'name',
+    'linkedin': {
+      'picture-url': 'avatar_url',
+      'first-name': 'name',
       'public-profile-url': 'link'
     },
-    'linkedin2' : {
-      'picture-url'       : 'avatar_url',
-      'first-name'        : 'name',
+    'linkedin2': {
+      'picture-url': 'avatar_url',
+      'first-name': 'name',
       'public-profile-url': 'link'
     },
-    'foursquare'   : {
-      'photo'    : lambda photo: ('avatar_url', photo.get('prefix') + '100x100'\
-                                              + photo.get('suffix')),
+    'foursquare': {
+      'photo': lambda photo: ('avatar_url', photo.get('prefix') + '100x100'\
+                                          + photo.get('suffix')),
       'firstName': 'firstName',
-      'lastName' : 'lastName',
-      'contact'  : lambda contact: ('email', contact.get('email')),
-      'id'       : lambda id: ('link',
-                               'http://foursquare.com/user/{0}'.format(id))
+      'lastName': 'lastName',
+      'contact': lambda contact: ('email', contact.get('email')),
+      'id': lambda id: ('link', FOURSQUARE_USER_LINK.format(id))
     },
-    'openid'   : {
-      'id'      : lambda id: ('avatar_url', DEFAULT_AVATAR_URL),
+    'openid': {
+      'id': lambda id: ('avatar_url', DEFAULT_AVATAR_URL),
       'nickname': 'name',
-      'email'   : 'link'
+      'email': 'link'
     }
   }
 
@@ -156,14 +156,16 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
      auth_info contains access token or oauth token and secret.
      extra is a dict with additional params passed to the auth init handler.
     """
-    auth_id = '%s:%s' % (provider, data['id'])
-    logging.info('Looking for a user with id %s', auth_id)
+    logging.debug('Got user data: %s', data)
 
+    auth_id = '%s:%s' % (provider, data['id'])
+
+    logging.debug('Looking for a user with id %s', auth_id)
     user = self.auth.store.user_model.get_by_auth_id(auth_id)
     _attrs = self._to_user_model_attrs(data, self.USER_ATTRS[provider])
 
     if user:
-      logging.info('Found existing user to log in')
+      logging.debug('Found existing user to log in')
       # Existing users might've changed their profile data so we update our
       # local model anyway. This might result in quite inefficient usage
       # of the Datastore, but we do this anyway for demo purposes.
@@ -172,8 +174,7 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
       # from the datastore and update local user in case something's changed.
       user.populate(**_attrs)
       user.put()
-      self.auth.set_session(
-        self.auth.store.user_to_dict(user))
+      self.auth.set_session(self.auth.store.user_to_dict(user))
 
     else:
       # check whether there's a user currently logged in
@@ -181,7 +182,7 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
       # otherwise add this auth_id to currently logged in user.
 
       if self.logged_in:
-        logging.info('Updating currently logged in user')
+        logging.debug('Updating currently logged in user')
 
         u = self.current_user
         u.populate(**_attrs)
@@ -192,7 +193,7 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
         u.add_auth_id(auth_id)
 
       else:
-        logging.info('Creating a brand new user')
+        logging.debug('Creating a brand new user')
         ok, user = self.auth.store.user_model.create_user(auth_id, **_attrs)
         if ok:
           self.auth.set_session(self.auth.store.user_to_dict(user))
@@ -202,13 +203,12 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
     self.session.add_flash(auth_info, 'auth_info')
     self.session.add_flash({'extra': extra}, 'extra')
 
+    # user profile page
+    destination_url = '/profile'
     if extra is not None:
       params = webob.multidict.MultiDict(extra)
-      destination_url = params.get('destination_url', '/profile')
-      return self.redirect(str(destination_url))
-    else:
-      # Go to the profile page
-      return self.redirect('/profile')
+      destination_url = str(params.get('destination_url', '/profile'))
+    return self.redirect(destination_url)
 
   def logout(self):
     self.auth.unset_session()

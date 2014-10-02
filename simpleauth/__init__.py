@@ -1,11 +1,11 @@
 """
-A simple auth handler for Google App Engine supporting 
+A simple auth handler for Google App Engine supporting
 OAuth 1.0a, 2.0 and OpenID.
 """
 
 __version__ = '0.1.4'
-__license__ = "MIT"
-__author__ = "Alex Vaghin (alex@cloudware.it)"
+__license__ = 'MIT'
+__author__ = 'Alex Vaghin (alex@cloudware.it)'
 
 __all__ = []
 

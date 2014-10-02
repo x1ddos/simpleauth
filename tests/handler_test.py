@@ -20,6 +20,7 @@ from httplib2 import Response
 import simpleauth as sa
 from simpleauth import SimpleAuthHandler
 
+
 #
 # test subjects
 #
@@ -29,10 +30,11 @@ class OAuth1ClientMock(object):
     super(OAuth1ClientMock, self).__init__()
     self._response_content = kwargs.pop('content', '')
     self._response_dict = kwargs
-    
+
   def request(self, url, method):
     return (Response(self._response_dict), self._response_content)
-  
+
+
 class DummyAuthHandler(RequestHandler, SimpleAuthHandler):
   SESSION_MOCK = {}
 
@@ -43,17 +45,17 @@ class DummyAuthHandler(RequestHandler, SimpleAuthHandler):
         'request': 'https://dummy/oauth1_rtoken',
         'auth'  : 'https://dummy/oauth1_auth?{0}'
       }, 'https://dummy/oauth1_atoken'),
-      'dummy_oauth2': ('oauth2', 'https://dummy/oauth2?{0}', 
+      'dummy_oauth2': ('oauth2', 'https://dummy/oauth2?{0}',
                                  'https://dummy/oauth2_token'),
     })
-    
+
     self.TOKEN_RESPONSE_PARSERS.update({
       'dummy_oauth1': '_json_parser',
       'dummy_oauth2': '_json_parser'
     })
 
     self.session = self.SESSION_MOCK.copy()
-    
+
   def dispatch(self):
     RequestHandler.dispatch(self)
     self.response.headers['SessionMock'] = json.dumps(self.session)
@@ -61,10 +63,10 @@ class DummyAuthHandler(RequestHandler, SimpleAuthHandler):
   def _on_signin(self, user_data, auth_info, provider, extra):
     self.redirect('/logged_in?provider=%s&extra=%s' % (
       provider, quote_plus(json.dumps(extra))))
-    
+
   def _callback_uri_for(self, provider):
     return '/auth/%s/callback' % provider
-    
+
   def _get_consumer_info_for(self, provider):
     return {
       'dummy_oauth1': ('cons_key', 'cons_secret'),
@@ -73,12 +75,12 @@ class DummyAuthHandler(RequestHandler, SimpleAuthHandler):
 
   # Mocks
 
-  def _oauth1_client(self, token=None, 
+  def _oauth1_client(self, token=None,
                            consumer_key=None, consumer_secret=None):
     """OAuth1 client mock"""
     return OAuth1ClientMock(
       content='{"oauth_token": "some oauth1 request token"}')
-    
+
   def _get_dummy_oauth1_user_info(self, auth_info, key=None, secret=None):
     return 'an oauth1 user info'
 
@@ -101,8 +103,8 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     DummyAuthHandler.OAUTH2_CSRF_STATE = SimpleAuthHandler.OAUTH2_CSRF_STATE
     DummyAuthHandler.SESSION_MOCK = {
       'req_token': {
-        'oauth_token':'oauth1 token', 
-        'oauth_token_secret':'a secret' 
+        'oauth_token':'oauth1 token',
+        'oauth_token_secret':'a secret'
       }
     }
 
@@ -111,18 +113,18 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
 
     # Dummy app to run the tests against
     routes = [
-      Route('/auth/<provider>', handler=DummyAuthHandler, 
+      Route('/auth/<provider>', handler=DummyAuthHandler,
         handler_method='_simple_auth'),
-      Route('/auth/<provider>/callback', handler=DummyAuthHandler, 
+      Route('/auth/<provider>/callback', handler=DummyAuthHandler,
         handler_method='_auth_callback') ]
     self.app = WSGIApplication(routes, debug=True)
-    
+
   def test_providers_dict(self):
-    for p in ('google', 'twitter', 'linkedin', 'linkedin2', 'openid', 
+    for p in ('google', 'twitter', 'linkedin', 'linkedin2', 'openid',
               'facebook', 'windows_live'):
-      self.assertIn(self.handler.PROVIDERS[p][0], 
+      self.assertIn(self.handler.PROVIDERS[p][0],
                    ['oauth2', 'oauth1', 'openid'])
-    
+
   def test_token_parsers_dict(self):
     for p in ('google', 'windows_live', 'facebook', 'linkedin', 'linkedin2',
               'twitter'):
@@ -134,7 +136,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     self.expectErrors()
     with self.assertRaises(sa.UnknownAuthMethodError):
       self.handler._simple_auth()
-      
+
     with self.assertRaises(sa.UnknownAuthMethodError):
       self.handler._simple_auth('whatever')
 
@@ -145,28 +147,28 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
   def test_openid_init(self):
     resp = self.app.get_response('/auth/openid?identity_url=some.oid.provider.com')
     self.assertEqual(resp.status_int, 302)
-    self.assertEqual(resp.headers['Location'], 
+    self.assertEqual(resp.headers['Location'],
       'https://www.google.com/accounts/Login?'
       'continue=http%3A//testbed.example.com/auth/openid/callback')
-        
+
   def test_openid_callback_success(self):
-    self.login_user('dude@example.org', 123, 
-      federated_identity='http://dude.example.org', 
+    self.login_user('dude@example.org', 123,
+      federated_identity='http://dude.example.org',
       federated_provider='example.org')
 
     resp = self.app.get_response('/auth/openid/callback')
     self.assertEqual(resp.status_int, 302)
-    self.assertEqual(resp.headers['Location'], 
+    self.assertEqual(resp.headers['Location'],
       'http://localhost/logged_in?provider=openid&extra=null')
-    
+
     uinfo, auth = self.handler._openid_callback()
     self.assertEqual(auth, {'provider': 'example.org'})
     self.assertEqual(uinfo, {
-      'id': 'http://dude.example.org', 
+      'id': 'http://dude.example.org',
       'nickname': 'http://dude.example.org',
       'email': 'dude@example.org'
     })
-  
+
   def test_openid_callback_failure(self):
     self.expectErrors()
     resp = self.app.get_response('/auth/openid/callback')
@@ -175,9 +177,9 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
 
   def test_oauth1_init(self):
     resp = self.app.get_response('/auth/dummy_oauth1')
-    
+
     self.assertEqual(resp.status_int, 302)
-    self.assertEqual(resp.headers['Location'], 
+    self.assertEqual(resp.headers['Location'],
       'https://dummy/oauth1_auth?'
       'oauth_token=some+oauth1+request+token&'
       'oauth_callback=%2Fauth%2Fdummy_oauth1%2Fcallback')
@@ -186,23 +188,23 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     url = '/auth/dummy_oauth1/callback?oauth_verifier=a-verifier-token'
     resp = self.app.get_response(url)
     self.assertEqual(resp.status_int, 302)
-    self.assertEqual(resp.headers['Location'], 
+    self.assertEqual(resp.headers['Location'],
       'http://localhost/logged_in?provider=dummy_oauth1&extra=null')
-        
+
   def test_oauth1_callback_failure(self):
     self.expectErrors()
     resp = self.app.get_response('/auth/dummy_oauth1/callback')
     self.assertEqual(resp.status_int, 500)
     self.assertRegexpMatches(resp.body, 'No OAuth verifier was provided')
-      
+
   def test_query_string_parser(self):
     parsed = self.handler._query_string_parser('param1=val1&param2=val2')
     self.assertEqual(parsed, {'param1':'val1', 'param2':'val2'})
 
   #
   # CSRF tests
-  # 
-  
+  #
+
   def test_csrf_default(self):
     # Backward compatibility with older versions
     self.assertFalse(SimpleAuthHandler.OAUTH2_CSRF_STATE)
@@ -255,7 +257,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     resp = self.app.get_response('/auth/dummy_oauth2/callback?' + query)
 
     self.assertEqual(resp.status_int, 302)
-    self.assertEqual(resp.headers['Location'], 
+    self.assertEqual(resp.headers['Location'],
       'http://localhost/logged_in?provider=dummy_oauth2&extra=%5B%5D')
 
     # token should be removed after during the authorization step
@@ -280,7 +282,7 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
 
     token1 = SimpleAuthHandler()._generate_csrf_token()
     token2 = SimpleAuthHandler()._generate_csrf_token()
-    
+
     DummyAuthHandler.OAUTH2_CSRF_STATE = True
     DummyAuthHandler.SESSION_MOCK = {
       DummyAuthHandler.OAUTH2_CSRF_SESSION_PARAM: token1
