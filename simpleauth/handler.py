@@ -396,6 +396,9 @@ class SimpleAuthHandler(object):
     Google API endpoint:
     https://www.googleapis.com/oauth2/v3/userinfo
     """
+    logging.warn('Google userinfo endpoint is deprecated. '
+                 'Use Google+ API (googleplus provider): '
+                 'https://developers.google.com/+/api/auth-migration#timetable')
     resp = self._oauth2_request(
       'https://www.googleapis.com/oauth2/v3/userinfo?{0}',
       auth_info['access_token']
