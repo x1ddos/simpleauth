@@ -7,3 +7,5 @@ example/secrets.py
 example/secrets.py.*
 !example/secrets.py.template
 MANIFEST
+setuptools-*.*
+simpleauth.egg-info

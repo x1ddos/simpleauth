@@ -1,4 +1,4 @@
-FLAGS    =
+FLAGS   ?=
 GAE_SDK ?= /usr/local/google_appengine
 PYTHON  ?= PYTHONPATH=.:./example/lib:$(GAE_SDK) python
 
@@ -20,4 +20,4 @@ update_example:
 
 clean:
 	find . -name '*.pyc' -exec rm -f \{} ';'
-	rm -rf dist
+	rm -rf dist simpleauth.egg-info

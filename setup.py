@@ -1,28 +1,32 @@
 # -*- coding: utf-8 -*-
+import ez_setup
+ez_setup.use_setuptools()
+
 import os
 import re
-from distutils.core import setup
+from setuptools import setup
 
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-__version__ = re.search(r"__version__ = '([^']+)'",
-  read('simpleauth/__init__.py')).group(1)
+_init = read('simpleauth/__init__.py')
+version = re.search(r"__version__ = '([^']+)'", _init).group(1)
+author = re.search(r"__author__ = '([^']+)'", _init).group(1)
+license = re.search(r"__license__ = '([^']+)'", _init).group(1)
 
 
 setup(name='simpleauth',
-      version=__version__,
-      author='Alex Vagin (http://alex.cloudware.it)',
-      author_email='alex@cloudware.it',
-      url='http://code.google.com/p/gae-simpleauth',
-      download_url='http://code.google.com/p/gae-simpleauth/source/checkout',
+      version=version,
+      author=author,
+      url='https://github.com/crhym3/simpleauth',
+      download_url='https://github.com/crhym3/simpleauth/archive/master.zip',
       description='A simple auth handler for Google App Engine supporting '
                   'OAuth 1.0a, 2.0 and OpenID',
       keywords='oauth oauth2 openid appengine google',
-      platforms=["any"],
-      license='MIT',
+      platforms=['any'],
+      license=license,
       install_requires=['oauth2', 'httplib2'],
       extras_require={
         'LinkedIn': ['lxml']
