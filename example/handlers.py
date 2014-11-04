@@ -227,9 +227,7 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
 
   def _get_optional_params_for(self, provider):
     """Returns optional parameters for auth init requests."""
-    if provider in AUTH_OPTIONAL_PARAMS:
-      return secrets.AUTH_OPTIONAL_PARAMS[provider]
-    return None		
+    return secrets.AUTH_OPTIONAL_PARAMS.get(provider)
 		
   def _to_user_model_attrs(self, data, attrs_map):
     """Get the needed information from the provider dataset."""
