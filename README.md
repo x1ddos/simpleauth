@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/crhym3/simpleauth.svg?branch=travis)](https://travis-ci.org/crhym3/simpleauth)
+[![Build Status](https://travis-ci.org/crhym3/simpleauth.svg?branch=master)](https://travis-ci.org/crhym3/simpleauth)
 
 This python module provides a simple authentication wrapper for a
 [Google App Engine][13] app.
