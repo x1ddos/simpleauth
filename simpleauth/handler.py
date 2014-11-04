@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import os
 import sys
 import logging
@@ -213,7 +213,7 @@ class SimpleAuthHandler(object):
       'client_id': key,
       'redirect_uri': callback_url
     }
-    if optional_params:
+    if isinstance(optional_params, dict):
       params.update(optional_params)
     if scope:
       params.update(scope=scope)
@@ -307,7 +307,7 @@ class SimpleAuthHandler(object):
       'oauth_token': request_token.get('oauth_token', None),
       'oauth_callback': callback_url
     }
-    if optional_params:
+    if isinstance(optional_params, dict):
       params.update(optional_params)
     target_url = auth_urls['auth'].format(urlencode(params))
 
@@ -412,7 +412,7 @@ class SimpleAuthHandler(object):
     values as defined by the provider.
     """
     return None
-		
+
   #
   # user profile/info
   #
