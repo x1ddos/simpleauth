@@ -1,0 +1,12 @@
+language: python
+python:
+  - "2.7"
+
+install:
+  - pip install -r tests/requirements.txt
+  - tests/install_latest_gae.sh
+  - export GAE_SDK=/tmp/google_appengine
+
+script:
+  - FLAGS=-v make test
+
