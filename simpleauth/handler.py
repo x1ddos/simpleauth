@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 import os
 import sys
 import logging
@@ -206,13 +206,15 @@ class SimpleAuthHandler(object):
     """Initiates OAuth 2.0 web flow"""
     key, secret, scope = self._get_consumer_info_for(provider)
     callback_url = self._callback_uri_for(provider)
+    optional_params = self._get_optional_params_for(provider)
 
     params = {
       'response_type': 'code',
       'client_id': key,
       'redirect_uri': callback_url
     }
-
+    if optional_params:
+      params.update(optional_params)
     if scope:
       params.update(scope=scope)
 
@@ -282,6 +284,7 @@ class SimpleAuthHandler(object):
     """Initiates OAuth 1.0 dance"""
     key, secret = self._get_consumer_info_for(provider)
     callback_url = self._callback_uri_for(provider)
+    optional_params = self._get_optional_params_for(provider)
     token_request_url = auth_urls.get('request', None)
     auth_url = auth_urls.get('auth', None)
     _parser = getattr(self, self.TOKEN_RESPONSE_PARSERS[provider], None)
@@ -300,10 +303,13 @@ class SimpleAuthHandler(object):
       raise AuthProviderResponseError(
           "Couldn't get a request token from %s" % str(request_token), provider)
 
-    target_url = auth_urls['auth'].format(urlencode({
+    params = {
       'oauth_token': request_token.get('oauth_token', None),
       'oauth_callback': callback_url
-    }))
+    }
+    if optional_params:
+      params.update(optional_params)
+    target_url = auth_urls['auth'].format(urlencode(params))
 
     logging.debug('Redirecting user to %s', target_url)
 
@@ -396,6 +402,17 @@ class SimpleAuthHandler(object):
     """
     return (None, None, None)
 
+  def _get_optional_params_for(self, provider):
+    """Returns optional parameters to send to provider on init
+
+    Defaults to None. 
+
+    If you want to send optional parameter, redefine this method.
+    This should return a dictionary of parameter names and 
+    values as defined by the provider.
+    """
+    return None
+		
   #
   # user profile/info
   #

@@ -225,6 +225,12 @@ class AuthHandler(BaseRequestHandler, SimpleAuthHandler):
     """Returns a tuple (key, secret) for auth init requests."""
     return secrets.AUTH_CONFIG[provider]
 
+  def _get_optional_params_for(self, provider):
+    """Returns optional parameters for auth init requests."""
+    if provider in AUTH_OPTIONAL_PARAMS:
+      return AUTH_OPTIONAL_PARAMS[provider]
+    return None		
+		
   def _to_user_model_attrs(self, data, attrs_map):
     """Get the needed information from the provider dataset."""
     user_attrs = {}
