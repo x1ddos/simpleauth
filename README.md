@@ -351,8 +351,7 @@ class AuthHandler(webapp2.RequestHandler, SimpleAuthHandler):
 
 ## CONTRIBUTORS
 
-Submit a pull request or better yet, use Rietveld at
-[codereview.appspot.com][10].
+Just submit a PR to this repo.
 
 There are so many people contributed to this project (which is awesome!)
 but I seemed to have lost track of some of them to put a complete and up-to-date list.
@@ -393,7 +392,6 @@ If you want to be mentioned here please do send me an email!
 [7]: http://security.stackexchange.com/questions/20187/oauth2-cross-site-request-forgery-and-state-parameter
 [8]: http://webapp-improved.appspot.com/guide/exceptions.html
 [9]: https://developers.google.com/appengine/docs/python/config/appconfig#Custom_Error_Responses
-[10]: https://codereview.appspot.com/
 [11]: https://github.com/crhym3/simpleauth/commits/master
 [12]: https://code.google.com/p/googleappengine/issues/detail?id=3258
 [13]: https://cloud.google.com/products/
