@@ -363,6 +363,8 @@ If you want to be mentioned here please do send me an email!
 
 ## CHANGELOG
 
+  - [v0.1.5][v0.1.5] - 2014-10-02
+
   - v0.1.4 - 2013-01-09
     * lxml lib requirement is now optional
       http://code.google.com/p/gae-simpleauth/issues/detail?id=3
@@ -396,3 +398,4 @@ If you want to be mentioned here please do send me an email!
 [12]: https://code.google.com/p/googleappengine/issues/detail?id=3258
 [13]: https://cloud.google.com/products/
 [14]: https://developers.google.com/+/api/auth-migration#timetable
+[v0.1.5]: https://github.com/crhym3/simpleauth/releases/tag/v0.1.5
