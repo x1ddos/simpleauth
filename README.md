@@ -214,12 +214,6 @@ When registering a new app, you have to specify a callback URL. Otherwise,
 it is considered as an `off-band` app and users will be given a PIN code
 instead of being redirected back to your site.
 
-Even though Twitter will not give you any error about improper callback URI,
-it'll always use the value set in app's settings page. So, if you have two
-versions, say one on `localhost` and another on `example.org`, you'll probably
-want to register two applications (e.g. `dev` and `production`) and use 
-appropriate set of key/secret accordingly.
-
 ### OpenID
 
 For OpenID to work you'll need to set `AuthenticationType` to `FederatedLogin`

@@ -31,7 +31,7 @@ class OAuth1ClientMock(object):
     self._response_content = kwargs.pop('content', '')
     self._response_dict = kwargs
 
-  def request(self, url, method):
+  def request(self, url, method, body=None):
     return (Response(self._response_dict), self._response_content)
 
 

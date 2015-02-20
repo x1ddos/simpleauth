@@ -291,7 +291,8 @@ class SimpleAuthHandler(object):
 
     # make a request_token request
     client = self._oauth1_client(consumer_key=key, consumer_secret=secret)
-    resp, content = client.request(auth_urls['request'], "GET")
+    body = urlencode({'oauth_callback': callback_url})
+    resp, content = client.request(auth_urls['request'], "POST", body)
 
     if resp.status != 200:
       raise AuthProviderResponseError(
