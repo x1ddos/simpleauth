@@ -118,7 +118,7 @@ class SimpleAuthHandler(object):
     'googleplus': '_json_parser',
     'windows_live': '_json_parser',
     'foursquare': '_json_parser',
-    'facebook': '_query_string_parser',
+    'facebook': '_json_parser',
     'linkedin': '_query_string_parser',
     'linkedin2': '_json_parser',
     'twitter': '_query_string_parser'
