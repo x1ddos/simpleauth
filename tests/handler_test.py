@@ -120,10 +120,9 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     self.app = WSGIApplication(routes, debug=True)
 
   def test_providers_dict(self):
-    for p in ('google', 'twitter', 'linkedin', 'linkedin2', 'openid',
-              'facebook', 'windows_live'):
-      self.assertIn(self.handler.PROVIDERS[p][0],
-                   ['oauth2', 'oauth1', 'openid'])
+    for p in ('google', 'twitter', 'linkedin', 'linkedin2', 'facebook',
+              'windows_live'):
+      self.assertIn(self.handler.PROVIDERS[p][0], ['oauth2', 'oauth1'])
 
   def test_token_parsers_dict(self):
     for p in ('google', 'windows_live', 'facebook', 'linkedin', 'linkedin2',
@@ -143,37 +142,6 @@ class SimpleAuthHandlerTestCase(TestMixin, unittest.TestCase):
     resp = self.app.get_response('/auth/xxx')
     self.assertEqual(resp.status_int, 500)
     self.assertRegexpMatches(resp.body, 'UnknownAuthMethodError')
-
-  def test_openid_init(self):
-    resp = self.app.get_response('/auth/openid?identity_url=some.oid.provider.com')
-    self.assertEqual(resp.status_int, 302)
-    self.assertEqual(resp.headers['Location'],
-      'https://www.google.com/accounts/Login?'
-      'continue=http%3A//testbed.example.com/auth/openid/callback')
-
-  def test_openid_callback_success(self):
-    self.login_user('dude@example.org', 123,
-      federated_identity='http://dude.example.org',
-      federated_provider='example.org')
-
-    resp = self.app.get_response('/auth/openid/callback')
-    self.assertEqual(resp.status_int, 302)
-    self.assertEqual(resp.headers['Location'],
-      'http://localhost/logged_in?provider=openid&extra=null')
-
-    uinfo, auth = self.handler._openid_callback()
-    self.assertEqual(auth, {'provider': 'example.org'})
-    self.assertEqual(uinfo, {
-      'id': 'http://dude.example.org',
-      'nickname': 'http://dude.example.org',
-      'email': 'dude@example.org'
-    })
-
-  def test_openid_callback_failure(self):
-    self.expectErrors()
-    resp = self.app.get_response('/auth/openid/callback')
-    self.assertEqual(resp.status_int, 500)
-    self.assertRegexpMatches(resp.body, 'InvalidOpenIDUserError')
 
   def test_oauth1_init(self):
     resp = self.app.get_response('/auth/dummy_oauth1')
