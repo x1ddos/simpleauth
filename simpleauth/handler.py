@@ -80,11 +80,11 @@ class SimpleAuthHandler(object):
   PROVIDERS = {
     # OAuth 2.0 providers
     'google': (OAUTH2,
-               'https://accounts.google.com/o/oauth2/auth?{0}',
-               'https://accounts.google.com/o/oauth2/token'),
+               'https://accounts.google.com/o/oauth2/v2/auth?{0}',
+               'https://www.googleapis.com/oauth2/v4/token'),
     'googleplus': (OAUTH2,
-                   'https://accounts.google.com/o/oauth2/auth?{0}',
-                   'https://accounts.google.com/o/oauth2/token'),
+                   'https://accounts.google.com/o/oauth2/v2/auth?{0}',
+                   'https://www.googleapis.com/oauth2/v4/token'),
     'windows_live': (OAUTH2,
                      'https://login.live.com/oauth20_authorize.srf?{0}',
                      'https://login.live.com/oauth20_token.srf'),
@@ -421,13 +421,10 @@ class SimpleAuthHandler(object):
   def _get_google_user_info(self, auth_info, key=None, secret=None):
     """Returns a dict of currenly logging in user.
     Google API endpoint:
-    https://www.googleapis.com/oauth2/v3/userinfo
+    https://www.googleapis.com/userinfo/v2/me
     """
-    logging.warn('Google userinfo endpoint is deprecated. '
-                 'Use Google+ API (googleplus provider): '
-                 'https://developers.google.com/+/api/auth-migration#timetable')
     resp = self._oauth2_request(
-        'https://www.googleapis.com/oauth2/v3/userinfo?{0}',
+        'https://www.googleapis.com/userinfo/v2/me?{0}',
         auth_info['access_token'])
     data = json.loads(resp)
     if 'id' not in data and 'sub' in data:
@@ -439,6 +436,9 @@ class SimpleAuthHandler(object):
     Google+ API endpoint:
     https://www.googleapis.com/plus/v1/people/me
     """
+    logging.warn('Google+ API endpoint is deprecated. '
+                 'Use Google API (google provider): '
+                 'https://developers.google.com/+/api-shutdown')
     resp = self._oauth2_request(
         'https://www.googleapis.com/plus/v1/people/me?{0}',
         auth_info['access_token'])
