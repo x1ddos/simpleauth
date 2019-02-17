@@ -1,3 +1,8 @@
+# non-maintenance mode
+
+I'm not actively maintaining this library due to lack of time.
+If you think you'd be up for taking it over as a new maintainer, please open a new issue and say so.
+
 [![Build Status](https://travis-ci.org/crhym3/simpleauth.svg?branch=master)](https://travis-ci.org/crhym3/simpleauth)
 
 This python module provides a simple authentication wrapper for a
